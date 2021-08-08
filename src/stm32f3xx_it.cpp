@@ -100,11 +100,11 @@ void SysTick_Handler(void) {
  * @brief This function handles DMA1 channel7 global interrupt.
  */
 void DMA1_Channel7_IRQHandler(void) {
-  HAL_DMA_IRQHandler(uart2.huart.hdmatx);
+  HAL_DMA_IRQHandler(uart2.huart_.hdmatx);
 }
 
 void USART2_IRQHandler(void) {
-  HAL_UART_IRQHandler(&uart2.huart);
+  HAL_UART_IRQHandler(&uart2.huart_);
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

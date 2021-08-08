@@ -3,14 +3,45 @@
 
 #include "main.h"
 #include <cstring>
+#include "ring_buffer.h"
+#include <array>
 
 class Uart {
+
+private:
+  static constexpr size_t kTxBufferSize = 10,
+      kMsgLen = 30;
+  using msg_t = std::array<char, kMsgLen>;
+  RingBuffer<msg_t, kTxBufferSize> tx_buff_;
+
 public:
   /**
    * @brief handle to uart
    *
    */
-  UART_HandleTypeDef huart;
+  UART_HandleTypeDef huart_;
+
+  
+  /**
+   * @brief Construct a new Uart object
+   * Resets the buffers, BUT doesn't initialize the Uart peripherial
+   */
+  Uart();
+  
+  /**
+   * @brief Periodic task which should be called whenever possible
+   * Handles transmitting from buffer
+   */
+  void tick();
+
+  /**
+   * @brief puts the message pointed to by \p buff to the tx queue
+   * 
+   * @param buff pointer to data to be transmitted
+   * @param num length of data
+   * @return true on succes, false if couldn't enqueue
+   */
+  bool send_queue(const char* buff, size_t num);
 
   /**
    * @brief initializes the UART peripherial
@@ -71,8 +102,34 @@ public:
   HAL_StatusTypeDef transmit_DMA(char* data);
 };
 
+
+inline Uart::Uart() {
+  tx_buff_.reset();
+}
+
+
+inline void Uart::tick() {
+  auto ptr = tx_buff_.getNextOccupied();
+  if(ptr == nullptr) return;
+  if(transmit(ptr->data()) == HAL_OK) {
+    tx_buff_.pop();
+  }
+
+}
+
+
+inline bool Uart::send_queue(const char* buff, size_t num) {
+  if(num > kMsgLen) return false;
+  auto buff_ptr = tx_buff_.getNextFree();
+  if(buff_ptr == nullptr) return false;
+
+  memcpy(buff_ptr->data(), buff, num);
+  tx_buff_.push();
+  return true;
+}
+
 inline HAL_StatusTypeDef Uart::transmit(uint8_t* data, size_t len) {
-  return HAL_UART_Transmit(&huart, data, len, 500);
+  return HAL_UART_Transmit(&huart_, data, len, 500);
 }
 
 template <size_t N>
@@ -88,7 +145,7 @@ inline HAL_StatusTypeDef Uart::transmit(char* data) {
 
 inline HAL_StatusTypeDef Uart::transmit_DMA(uint8_t* data, size_t len) {
   const auto start = HAL_GetTick();
-  while (HAL_UART_Transmit_DMA(&huart, data, len) != HAL_OK) {
+  while (HAL_UART_Transmit_DMA(&huart_, data, len) != HAL_OK) {
     if (HAL_GetTick() > (start + 100)) {
       return HAL_ERROR;
     }

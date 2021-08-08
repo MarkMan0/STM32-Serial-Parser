@@ -1,18 +1,18 @@
 #include "uart.h"
 
 void Uart::init() {
-  huart.Instance = USART2;
-  huart.Init.BaudRate = 115200;
-  huart.Init.WordLength = UART_WORDLENGTH_8B;
-  huart.Init.StopBits = UART_STOPBITS_1;
-  huart.Init.Parity = UART_PARITY_NONE;
-  huart.Init.Mode = UART_MODE_TX_RX;
-  huart.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart_.Instance = USART2;
+  huart_.Init.BaudRate = 115200;
+  huart_.Init.WordLength = UART_WORDLENGTH_8B;
+  huart_.Init.StopBits = UART_STOPBITS_1;
+  huart_.Init.Parity = UART_PARITY_NONE;
+  huart_.Init.Mode = UART_MODE_TX_RX;
+  huart_.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart_.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart_.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
 
-  huart.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart) != HAL_OK) {
+  huart_.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart_) != HAL_OK) {
     Error_Handler();
   }
 }
