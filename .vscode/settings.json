@@ -1,5 +1,11 @@
 {
     "files.associations": {
         "stm32f3xx_hal_conf.h": "c"
-    }
+    },
+    "formatFiles.excludedFolders": [
+        ".pio",
+        ".vscode",
+        ".git",
+        "documentation"
+    ]
 }

@@ -13,7 +13,7 @@ extern "C" {
 
 /**
  * @brief Called when initialization fails for peripherials
- * 
+ *
  */
 void Error_Handler(void);
 

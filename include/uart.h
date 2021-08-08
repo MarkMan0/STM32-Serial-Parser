@@ -15,14 +15,12 @@
  * Messages are put into a ring buffer, and transmitted one after another
  * Transmission is also possible directly, without the use of the Ring buffer
  * Direct transmission can also be done using DMA
- * 
+ *
  */
 class Uart {
-
 private:
-  
-  static constexpr size_t kTxBufferSize = 10, //!< The size of the transmission ring buffer
-      kMsgLen = 30;                           //!< Max lenth of a message to transmit
+  static constexpr size_t kTxBufferSize = 10,  //!< The size of the transmission ring buffer
+      kMsgLen = 30;                            //!< Max lenth of a message to transmit
   using msg_t = std::array<char, kMsgLen>;
   RingBuffer<msg_t, kTxBufferSize> tx_buff_;  //!< Transmission ring buffer
 
@@ -33,13 +31,13 @@ public:
    */
   UART_HandleTypeDef huart_;
 
-  
+
   /**
    * @brief Construct a new Uart object
    * Resets the buffers, BUT doesn't initialize the Uart peripherial
    */
   Uart();
-  
+
   /**
    * @brief Periodic task which should be called whenever possible
    * Handles transmitting from buffer
@@ -48,7 +46,7 @@ public:
 
   /**
    * @brief puts the message pointed to by \p buff to the tx queue
-   * 
+   *
    * @param buff pointer to data to be transmitted
    * @param num length of data
    * @return true on succes, false if couldn't enqueue
@@ -122,18 +120,17 @@ inline Uart::Uart() {
 
 inline void Uart::tick() {
   auto ptr = tx_buff_.getNextOccupied();
-  if(ptr == nullptr) return;
-  if(transmit(ptr->data()) == HAL_OK) {
+  if (ptr == nullptr) return;
+  if (transmit(ptr->data()) == HAL_OK) {
     tx_buff_.pop();
   }
-
 }
 
 
 inline bool Uart::send_queue(const char* buff, size_t num) {
-  if(num > kMsgLen) return false;
+  if (num > kMsgLen) return false;
   auto buff_ptr = tx_buff_.getNextFree();
-  if(buff_ptr == nullptr) return false;
+  if (buff_ptr == nullptr) return false;
 
   memcpy(buff_ptr->data(), buff, num);
   tx_buff_.push();
@@ -146,8 +143,7 @@ inline HAL_StatusTypeDef Uart::transmit(uint8_t* data, size_t len) {
 
 template <size_t N>
 inline HAL_StatusTypeDef Uart::transmit(const char (&arr)[N]) {
-  if (N == 0)
-    return HAL_OK;
+  if (N == 0) return HAL_OK;
   return transmit(reinterpret_cast<uint8_t*>(const_cast<char*>(arr)), N - 1);
 }
 
@@ -167,8 +163,7 @@ inline HAL_StatusTypeDef Uart::transmit_DMA(uint8_t* data, size_t len) {
 
 template <size_t N>
 inline HAL_StatusTypeDef Uart::transmit_DMA(const char (&arr)[N]) {
-  if (N == 0)
-    return HAL_OK;
+  if (N == 0) return HAL_OK;
   return transmit_DMA(reinterpret_cast<uint8_t*>(const_cast<char*>(arr)), N - 1);
 }
 

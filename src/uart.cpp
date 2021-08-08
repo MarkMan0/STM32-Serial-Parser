@@ -1,7 +1,7 @@
 #include "uart.h"
 
 /** @file uart.cpp
- * Contains code to initialize the uart peripherial 
+ * Contains code to initialize the uart peripherial
  */
 
 void Uart::init() {

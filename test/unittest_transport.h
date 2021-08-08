@@ -1,7 +1,7 @@
 /**
  * @file unittest_transport.h
  * Functions used by platformio test framework to communicate
- * 
+ *
  */
 
 #ifndef UNITEST_TRANSPORT_H
@@ -22,4 +22,4 @@ void unittest_uart_end();
 }
 #endif
 
-#endif // UNITEST_TRANSPORT_H
+#endif  // UNITEST_TRANSPORT_H

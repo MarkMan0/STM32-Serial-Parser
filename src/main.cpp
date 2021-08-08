@@ -8,7 +8,7 @@
 
 /**
  * @brief Configures the system clock, called from main()
- * 
+ *
  */
 void SystemClock_Config();
 
@@ -25,8 +25,8 @@ int main() {
   uart2.send_queue(msg, len);
   uart2.send_queue(msg, len);
 
-  auto elapsed = [](uint32_t &next, uint32_t interval = 500) -> bool {
-    if(HAL_GetTick() > next) {
+  auto elapsed = [](uint32_t& next, uint32_t interval = 500) -> bool {
+    if (HAL_GetTick() > next) {
       next += interval;
       return true;
     }
@@ -77,7 +77,7 @@ void SystemClock_Config(void) {
 
 /**
  * @brief Initializes the clocks, called by HAL in the background
- * 
+ *
  */
 void HAL_MspInit() {
   __HAL_RCC_SYSCFG_CLK_ENABLE();

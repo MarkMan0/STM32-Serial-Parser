@@ -24,7 +24,7 @@ public:
 public:
   /**
    * @brief Resets head and tail
-   * 
+   *
    */
   void reset();
 
@@ -36,18 +36,18 @@ public:
   void push();
   /**
    * @brief Moves tail forward
-   * 
+   *
    */
   void pop();
   /**
    * @brief Get the Next Free object
-   * 
+   *
    * @return T* Pointer to the next free, or nullptr if full
    */
   data_t* getNextFree();
   /**
    * @brief Get the Next Occupied object
-   * 
+   *
    * @return T* pointer to the next data, or nullptr if empty
    */
   data_t* getNextOccupied();
@@ -55,19 +55,19 @@ public:
   // states
   /**
    * @brief Check if buffer is empty
-   * 
+   *
    * @return true if empty
    */
   bool isEmpty() const;
   /**
    * @brief Check if buffer is full
-   * 
+   *
    * @return true if full
    */
   bool isFull() const;
   /**
    * @brief Get number of data in buffer
-   * 
+   *
    * @return uint8_t number of data
    */
   uint8_t numOccupied() const;
@@ -78,7 +78,6 @@ private:
   uint8_t head_{ 0 };
   uint8_t tail_{ 0 };
   bool is_full_{ false };
-
 };
 
 
@@ -92,7 +91,7 @@ inline void RingBuffer<T, L>::reset() {
 template <class T, uint8_t L>
 inline void RingBuffer<T, L>::push() {
   const uint8_t head2 = (head_ + 1) % buffer_size_;
-  if(is_full_) return;
+  if (is_full_) return;
   if (head2 == tail_) {
     is_full_ = true;
   }
@@ -101,8 +100,7 @@ inline void RingBuffer<T, L>::push() {
 
 template <class T, uint8_t L>
 inline void RingBuffer<T, L>::pop() {
-  if (isEmpty())
-    return;
+  if (isEmpty()) return;
   tail_ = (tail_ + 1) % buffer_size_;
   is_full_ = false;
 }
@@ -117,8 +115,7 @@ inline typename RingBuffer<T, L>::data_t* RingBuffer<T, L>::getNextFree() {
 
 template <class T, uint8_t L>
 inline typename RingBuffer<T, L>::data_t* RingBuffer<T, L>::getNextOccupied() {
-  if (isEmpty())
-    return nullptr;
+  if (isEmpty()) return nullptr;
   return &(buffer[tail_]);
 }
 
