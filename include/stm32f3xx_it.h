@@ -1,5 +1,11 @@
 #ifndef __STM32F3xx_IT_H
 #define __STM32F3xx_IT_H
+
+/** @file stm32f3xx_it.h
+ * Interrupt prototypes
+ * To get these prototypes, it's easiest to STM32CubeIDE
+ */
+
 #include "main.h"
 #ifdef __cplusplus
 extern "C" {

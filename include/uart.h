@@ -1,18 +1,30 @@
 #ifndef UART_H_
 #define UART_H_
 
+/** @file uart.h
+ * Class to encapsulate helper functions for uart operations
+ */
+
 #include "main.h"
 #include <cstring>
 #include "ring_buffer.h"
 #include <array>
 
+/**
+ * @brief Encapsulates UART2
+ * Messages are put into a ring buffer, and transmitted one after another
+ * Transmission is also possible directly, without the use of the Ring buffer
+ * Direct transmission can also be done using DMA
+ * 
+ */
 class Uart {
 
 private:
-  static constexpr size_t kTxBufferSize = 10,
-      kMsgLen = 30;
+  
+  static constexpr size_t kTxBufferSize = 10, //!< The size of the transmission ring buffer
+      kMsgLen = 30;                           //!< Max lenth of a message to transmit
   using msg_t = std::array<char, kMsgLen>;
-  RingBuffer<msg_t, kTxBufferSize> tx_buff_;
+  RingBuffer<msg_t, kTxBufferSize> tx_buff_;  //!< Transmission ring buffer
 
 public:
   /**
@@ -50,7 +62,7 @@ public:
   void init();
 
   /**
-   * @brief Non blocking transmission via UART.
+   * @brief Non blocking, immediate transmission via UART.
    *
    * @param data pointer to data to be transmitted
    * @param len number of bytes to be transmitted
@@ -58,7 +70,7 @@ public:
    */
   HAL_StatusTypeDef transmit(uint8_t* data, size_t len);
   /**
-   * @brief Non blocking, Used to transmit char[] arrays what are declared by the user.
+   * @brief Non blocking, immediate Used to transmit char[] arrays what are declared by the user.
    *
    * @tparam N automatically deduces by the compiler
    * @return HAL_StatusTypeDef HAL_OK on succes
@@ -67,7 +79,7 @@ public:
   template <size_t N>
   HAL_StatusTypeDef transmit(const char (&arr)[N]);
   /**
-   * @brief Non blocking transmission of a null-terminated array
+   * @brief Non blocking, immediate transmission of a null-terminated array
    *
    * @param data pointer to null terminated char array
    * @return HAL_StatusTypeDef HAL_OK on success
@@ -75,7 +87,7 @@ public:
   HAL_StatusTypeDef transmit(char* data);
 
   /**
-   * @brief Transmits data using DMA
+   * @brief Transmits data immediately using DMA
    *
    * @param data pointer to data
    * @param len length of data
@@ -84,7 +96,7 @@ public:
    */
   HAL_StatusTypeDef transmit_DMA(uint8_t* data, size_t len);
   /**
-   * @brief transmit a char[] array using DMA
+   * @brief transmit a char[] array immediately using DMA
    *
    * @tparam N lenght of array, deduced by the compiler
    * @return HAL_StatusTypeDef
@@ -93,7 +105,7 @@ public:
   template <size_t N>
   HAL_StatusTypeDef transmit_DMA(const char (&arr)[N]);
   /**
-   * @brief Transmits a null-terminated array using DMA
+   * @brief Transmits a null-terminated array immediately using DMA
    *
    * @param data pointer to null-terminated array
    * @return HAL_StatusTypeDef

@@ -2,6 +2,14 @@
 #include "main.h"
 #include "uart.h"
 
+/** @file main.cpp
+ * File containing int main()
+ */
+
+/**
+ * @brief Configures the system clock, called from main()
+ * 
+ */
 void SystemClock_Config();
 
 int main() {
@@ -67,6 +75,10 @@ void SystemClock_Config(void) {
   }
 }
 
+/**
+ * @brief Initializes the clocks, called by HAL in the background
+ * 
+ */
 void HAL_MspInit() {
   __HAL_RCC_SYSCFG_CLK_ENABLE();
   __HAL_RCC_PWR_CLK_ENABLE();

@@ -1,11 +1,15 @@
 #ifndef RING_BUFFER_H_
 #define RING_BUFFER_H_
 
+/** @file ring_buffer.h
+ * templated inline ring buffer class
+ */
+
 #include <array>
 #include <cstdint>
 
 /**
- * @brief Very simple ring buffer, not fool-proof.
+ * @brief Very simple inline ring buffer, not fool-proof.
  * Will not accept incoming data when full
  * @tparam T type which the buffer holds
  * @tparam L The size of the buffer
