@@ -68,8 +68,6 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uart) {
     dma_rx.Init.PeriphInc = DMA_PINC_DISABLE;
     dma_rx.Init.Priority = DMA_PRIORITY_LOW;
 
-    HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
     HAL_DMA_Init(&dma_rx);
 
     __HAL_LINKDMA(uart, hdmatx, dma_tx);
@@ -78,6 +76,65 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uart) {
     HAL_NVIC_SetPriority(USART2_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(USART2_IRQn);
   }
+}
+
+/**
+ * @brief UART receive complete callback, called through DMA handle by HAL
+ * Based on code from https://github.com/akospasztor/stm32-dma-uart
+ * @param huart
+ */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
+  uint16_t i, pos, start, length;
+  uint16_t currCNDTR = __HAL_DMA_GET_COUNTER(huart->hdmarx);
+
+  /* Ignore IDLE Timeout when the received characters exactly filled up the DMA buffer and DMA Rx Complete IT is
+   * generated, but there is no new character during timeout */
+  if (uart2.dma_state_.flag && currCNDTR == uart2.kDmaRxBuffSize) {
+    uart2.dma_state_.flag = 0;
+    return;
+  }
+
+  /* Determine start position in DMA buffer based on previous CNDTR value */
+  start = (uart2.dma_state_.prevCNDTR < uart2.kDmaRxBuffSize) ? (uart2.kDmaRxBuffSize - uart2.dma_state_.prevCNDTR) : 0;
+
+  if (uart2.dma_state_.flag) {
+    /* Timeout event */
+    /* Determine new data length based on previous DMA_CNDTR value:
+     *  If previous CNDTR is less than DMA buffer size: there is old data in DMA buffer (from previous timeout) that has
+     * to be ignored. If CNDTR == DMA buffer size: entire buffer content is new and has to be processed.
+     */
+    length = (uart2.dma_state_.prevCNDTR < uart2.kDmaRxBuffSize) ? (uart2.dma_state_.prevCNDTR - currCNDTR) :
+                                                                   (uart2.kDmaRxBuffSize - currCNDTR);
+    uart2.dma_state_.prevCNDTR = currCNDTR;
+    uart2.dma_state_.flag = 0;
+  } else {
+    /* DMA Rx Complete event */
+    length = uart2.kDmaRxBuffSize - start;
+    uart2.dma_state_.prevCNDTR = uart2.kDmaRxBuffSize;
+  }
+
+  // get pointer to buffer
+  auto ptr = uart2.rx_buff_.getNextFree();
+
+  if (ptr == nullptr) {
+    return;
+  }
+  /* Copy and Process new data */
+  for (i = 0, pos = start; i < length; ++i, ++pos) {
+    (*ptr)[i] = uart2.dma_rx_buff_[pos];
+  }
+  uart2.rx_buff_.push();
+}
+
+void Uart::start_listen() {
+  /**Enable USART 2 IDLE interrupt and register callback */
+  SET_BIT(USART2->CR1, USART_CR1_IDLEIE);
+  HAL_UART_RegisterCallback(&uart2.huart_, HAL_UART_RX_COMPLETE_CB_ID, HAL_UART_RxCpltCallback);
+  /** Start receiving */
+  HAL_UART_Receive_DMA(&huart_, dma_rx_buff_.data(), dma_rx_buff_.size());
+  /** Enable DMA1_6 interrupt */
+  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
 }
 
 Uart uart2;

@@ -88,6 +88,7 @@ void PendSV_Handler(void) {
 void SysTick_Handler(void) {
   HAL_IncTick();
   HAL_SYSTICK_IRQHandler();
+  uart2.onSysTickISER();
 }
 
 /******************************************************************************/
@@ -98,14 +99,29 @@ void SysTick_Handler(void) {
 /******************************************************************************/
 
 /**
+ * @brief This function handles DMA1 channel6 global interrupt.
+ */
+void DMA1_Channel6_IRQHandler(void) {
+  HAL_DMA_IRQHandler(uart2.huart_.hdmarx);
+}
+
+/**
  * @brief This function handles DMA1 channel7 global interrupt.
  */
 void DMA1_Channel7_IRQHandler(void) {
   HAL_DMA_IRQHandler(uart2.huart_.hdmatx);
 }
 
+/**
+ * @brief This function handles USART2 interrupts.
+ */
 void USART2_IRQHandler(void) {
-  HAL_UART_IRQHandler(&uart2.huart_);
+  if (USART2->ISR & USART_ISR_IDLE) {
+    uart2.onIdleISR();
+    USART2->ICR |= UART_CLEAR_IDLEF;
+  } else {
+    HAL_UART_IRQHandler(&uart2.huart_);
+  }
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -17,27 +17,16 @@ int main() {
 
   SystemClock_Config();
   uart2.init();
+  uart2.start_listen();
 
   static const char msg[] = "Hello world!\n";
   size_t len = strlen(msg);
 
   uart2.send_queue(msg, len);
-  uart2.send_queue(msg, len);
-  uart2.send_queue(msg, len);
-
-  auto elapsed = [](uint32_t& next, uint32_t interval = 500) -> bool {
-    if (HAL_GetTick() > next) {
-      next += interval;
-      return true;
-    }
-    return false;
-  };
-
-  uint32_t next1 = 0, next2 = 0;
 
   while (1) {
     uart2.tick();
-    HAL_Delay(5);
+    HAL_Delay(300);
   }
 }
 

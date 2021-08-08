@@ -20,9 +20,35 @@
 class Uart {
 private:
   static constexpr size_t kTxBufferSize = 10,  //!< The size of the transmission ring buffer
-      kMsgLen = 30;                            //!< Max lenth of a message to transmit
-  using msg_t = std::array<char, kMsgLen>;
-  RingBuffer<msg_t, kTxBufferSize> tx_buff_;  //!< Transmission ring buffer
+      kRxBufferSize = 10,                      //!< The size of the Rx Ring buffer
+      kMsgLen = 30,                            //!< Max lenth of a message to transmit
+      kDmaRxBuffSize = 30;                     //!< RX DMA buffer size
+
+  using msg_t = std::array<char, kMsgLen>;  //!< message type alias
+
+  RingBuffer<msg_t, kTxBufferSize> tx_buff_;  //!< Tx ring buffer
+  RingBuffer<msg_t, kRxBufferSize> rx_buff_;  //!< RX Ring buffer
+
+  std::array<uint8_t, kDmaRxBuffSize> dma_rx_buff_;  //!< DMA buffer
+
+  /**
+   * @brief Callback for DMA complete ISR
+   *
+   * @param huart uart handle
+   */
+  friend void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart);
+
+  /**
+   * @var dma_state_
+   * @brief Anonymous struct to track IDLE line
+   * On IDLE interrupt the countdown is set to a positive value.
+   * Countdown is decremented every ms, when reaches 0, HAL_UART_RxCpltCallback is called
+   */
+  struct {
+    volatile bool flag{ false };
+    volatile uint16_t countdown{ 0 };
+    uint16_t prevCNDTR{ kDmaRxBuffSize };
+  } dma_state_;
 
 public:
   /**
@@ -52,6 +78,12 @@ public:
    * @return true on succes, false if couldn't enqueue
    */
   bool send_queue(const char* buff, size_t num);
+
+  /**
+   * @brief Starts listening for incoming messages
+   *
+   */
+  void start_listen();
 
   /**
    * @brief initializes the UART peripherial
@@ -110,11 +142,34 @@ public:
    * @see transmit(char* data)
    */
   HAL_StatusTypeDef transmit_DMA(char* data);
+  /**
+   * @brief Called on UART IDLE interrupt, starts countdown
+   *
+   */
+  void onIdleISR() {
+    dma_state_.countdown = 5;
+  }
+
+  /**
+   * @brief Called from SYSTICK ISR, counts down, on zero calls callback
+   * @see HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart)
+   * @see dma_state_
+   */
+  void onSysTickISER() {
+    if (dma_state_.countdown) {
+      --dma_state_.countdown;
+      if (dma_state_.countdown == 0) {
+        dma_state_.flag = true;
+        huart_.hdmarx->XferCpltCallback(huart_.hdmarx);
+      }
+    }
+  }
 };
 
 
 inline Uart::Uart() {
   tx_buff_.reset();
+  rx_buff_.reset();
 }
 
 
@@ -131,7 +186,7 @@ inline bool Uart::send_queue(const char* buff, size_t num) {
   if (num > kMsgLen) return false;
   auto buff_ptr = tx_buff_.getNextFree();
   if (buff_ptr == nullptr) return false;
-
+  memset(buff_ptr->data(), 0, buff_ptr->size());
   memcpy(buff_ptr->data(), buff, num);
   tx_buff_.push();
   return true;
