@@ -7,5 +7,7 @@
         ".vscode",
         ".git",
         "documentation"
-    ]
+    ],
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
 }
