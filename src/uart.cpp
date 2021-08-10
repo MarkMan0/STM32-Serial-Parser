@@ -73,7 +73,9 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uart) {
 
     HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
-    HAL_DMA_Init(&dma_tx);
+    if (HAL_DMA_Init(&dma_tx) != HAL_OK) {
+      uart2.transmit("HAL DMA Init failed for tx");
+    }
 
     dma_rx.Instance = DMA1_Channel6;
     dma_rx.Init.Direction = DMA_PERIPH_TO_MEMORY;
@@ -84,7 +86,9 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uart) {
     dma_rx.Init.PeriphInc = DMA_PINC_DISABLE;
     dma_rx.Init.Priority = DMA_PRIORITY_LOW;
 
-    HAL_DMA_Init(&dma_rx);
+    if (HAL_DMA_Init(&dma_rx) != HAL_OK) {
+      uart2.transmit("HAL DMA Init failed for rx");
+    }
 
     __HAL_LINKDMA(uart, hdmatx, dma_tx);
     __HAL_LINKDMA(uart, hdmarx, dma_rx);
@@ -145,9 +149,15 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
 void Uart::start_listen() {
   /**Enable USART 2 IDLE interrupt and register callback */
   SET_BIT(USART2->CR1, USART_CR1_IDLEIE);
-  HAL_UART_RegisterCallback(&uart2.huart_, HAL_UART_RX_COMPLETE_CB_ID, HAL_UART_RxCpltCallback);
+  if (HAL_UART_RegisterCallback(&uart2.huart_, HAL_UART_RX_COMPLETE_CB_ID, HAL_UART_RxCpltCallback) != HAL_OK) {
+    uart2.transmit("Couldn't register callback");
+    Error_Handler();
+  }
   /** Start receiving */
-  HAL_UART_Receive_DMA(&huart_, dma_rx_buff_.data(), dma_rx_buff_.size());
+  if (HAL_UART_Receive_DMA(&huart_, dma_rx_buff_.data(), dma_rx_buff_.size()) != HAL_OK) {
+    uart2.transmit("Couldn't start receive DMA");
+    Error_Handler();
+  }
   /** Enable DMA1_6 interrupt */
   HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);

@@ -70,7 +70,7 @@ public:
    * @param data pointer to null terminated char array
    * @return true on success
    */
-  bool send_queue(char* data) {
+  bool send_queue(const char* data) {
     return send_queue(data, strlen(data));
   }
 
@@ -140,8 +140,8 @@ public:
    * @param data pointer to null terminated char array
    * @return true on success
    */
-  bool transmit(char* data) {
-    return transmit(reinterpret_cast<uint8_t*>(data), strlen(data));
+  bool transmit(const char* data) {
+    return transmit(reinterpret_cast<uint8_t*>(const_cast<char*>(data)), strlen(data));
   }
 
   /**
@@ -173,8 +173,8 @@ public:
    * @return true on success
    * @see transmit(char* data)
    */
-  bool transmit_DMA(char* data) {
-    return transmit_DMA(reinterpret_cast<uint8_t*>(data), strlen(data));
+  bool transmit_DMA(const char* data) {
+    return transmit_DMA(reinterpret_cast<uint8_t*>(const_cast<char*>(data)), strlen(data));
   }
   /**
    * @brief Called on UART IDLE interrupt, starts countdown
