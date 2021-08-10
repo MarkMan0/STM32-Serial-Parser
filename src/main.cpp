@@ -26,6 +26,11 @@ int main() {
 
   while (1) {
     uart2.tick();
+    if(uart2.has_message()) {
+      const auto& msg = uart2.get_message();
+      uart2.send_queue(msg.data(), strlen(msg.data()));
+      uart2.pop_rx();
+    }
     HAL_Delay(300);
   }
 }

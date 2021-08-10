@@ -50,6 +50,7 @@ private:
     uint16_t prevCNDTR{ kDmaRxBuffSize };
   } dma_state_;
 
+  const msg_t kEmptyMsg{0};
 public:
   /**
    * @brief handle to uart
@@ -90,6 +91,26 @@ public:
    *
    */
   void init();
+
+  /**
+   * @brief Check if RX buffer has data
+   * 
+   * @return true id RX buffer is not empty
+   */
+  bool has_message() const;
+
+  /**
+   * @brief Get the next message from buffer
+   * @details return const reference to a message, or to an internal buffer, which is all 0
+   * @return const reference to message, or to an internal buffer
+   */
+  const msg_t& get_message() const;
+
+  /**
+   * @brief Calls pop() on rx_buff_
+   * 
+   */
+  void pop_rx();
 
   /**
    * @brief Non blocking, immediate transmission via UART.
@@ -224,6 +245,19 @@ inline HAL_StatusTypeDef Uart::transmit_DMA(const char (&arr)[N]) {
 
 inline HAL_StatusTypeDef Uart::transmit_DMA(char* data) {
   return transmit_DMA(reinterpret_cast<uint8_t*>(data), strlen(data));
+}
+
+inline bool Uart::has_message() const {
+  return !rx_buff_.isEmpty();
+}
+
+inline const Uart::msg_t& Uart::get_message() const {
+  if(rx_buff_.isEmpty()) return kEmptyMsg;
+  return *(rx_buff_.getNextOccupied());
+}
+
+inline void Uart::pop_rx() {
+  rx_buff_.pop();
 }
 
 extern Uart uart2;

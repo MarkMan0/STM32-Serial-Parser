@@ -52,6 +52,12 @@ public:
    */
   data_t* getNextOccupied();
 
+  /**
+   * @brief Pointer to constant next occupied object
+   * @see getNextOccupied()
+   * @return const data_t* 
+   */
+  const data_t* getNextOccupied() const;
   // states
   /**
    * @brief Check if buffer is empty
@@ -115,6 +121,12 @@ inline typename RingBuffer<T, L>::data_t* RingBuffer<T, L>::getNextFree() {
 
 template <class T, uint8_t L>
 inline typename RingBuffer<T, L>::data_t* RingBuffer<T, L>::getNextOccupied() {
+  if (isEmpty()) return nullptr;
+  return &(buffer[tail_]);
+}
+
+template <class T, uint8_t L>
+inline const typename RingBuffer<T, L>::data_t* RingBuffer<T, L>::getNextOccupied() const {
   if (isEmpty()) return nullptr;
   return &(buffer[tail_]);
 }
