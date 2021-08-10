@@ -18,40 +18,13 @@
  *
  */
 class Uart {
-private:
+public:
   static constexpr size_t kTxBufferSize = 10,  //!< The size of the transmission ring buffer
       kRxBufferSize = 10,                      //!< The size of the Rx Ring buffer
       kMsgLen = 30,                            //!< Max lenth of a message to transmit
       kDmaRxBuffSize = 30;                     //!< RX DMA buffer size
+  using msg_t = std::array<char, kMsgLen>;     //!< message type alias
 
-  using msg_t = std::array<char, kMsgLen>;  //!< message type alias
-
-  RingBuffer<msg_t, kTxBufferSize> tx_buff_;  //!< Tx ring buffer
-  RingBuffer<msg_t, kRxBufferSize> rx_buff_;  //!< RX Ring buffer
-
-  std::array<uint8_t, kDmaRxBuffSize> dma_rx_buff_;  //!< DMA buffer
-
-  /**
-   * @brief Callback for DMA complete ISR
-   *
-   * @param huart uart handle
-   */
-  friend void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart);
-
-  /**
-   * @var dma_state_
-   * @brief Anonymous struct to track IDLE line
-   * On IDLE interrupt the countdown is set to a positive value.
-   * Countdown is decremented every ms, when reaches 0, HAL_UART_RxCpltCallback is called
-   */
-  struct {
-    volatile bool flag{ false };
-    volatile uint16_t countdown{ 0 };
-    uint16_t prevCNDTR{ kDmaRxBuffSize };
-  } dma_state_;
-
-  const msg_t kEmptyMsg{0};
-public:
   /**
    * @brief handle to uart
    *
@@ -81,6 +54,27 @@ public:
   bool send_queue(const char* buff, size_t num);
 
   /**
+   * @brief put a known-size array into send queue
+   *
+   * @tparam N automatically deduced size of array
+   * @return true on success
+   */
+  template <size_t N>
+  bool send_queue(const char (&arr)[N]) {
+    return send_queue(arr, N);
+  }
+
+  /**
+   * @brief put a null-terminated array into send queue
+   *
+   * @param data pointer to null terminated char array
+   * @return true on success
+   */
+  bool send_queue(char* data) {
+    return send_queue(data, strlen(data));
+  }
+
+  /**
    * @brief Starts listening for incoming messages
    *
    */
@@ -94,80 +88,99 @@ public:
 
   /**
    * @brief Check if RX buffer has data
-   * 
+   *
    * @return true id RX buffer is not empty
    */
-  bool has_message() const;
+  bool has_message() const {
+    return !rx_buff_.is_empty();
+  }
 
   /**
    * @brief Get the next message from buffer
    * @details return const reference to a message, or to an internal buffer, which is all 0
    * @return const reference to message, or to an internal buffer
    */
-  const msg_t& get_message() const;
+  const msg_t& get_message() const {
+    if (!has_message()) return kEmptyMsg;
+    return *(rx_buff_.get_next_occupied());
+  }
 
   /**
    * @brief Calls pop() on rx_buff_
-   * 
+   *
    */
-  void pop_rx();
+  void pop_rx() {
+    rx_buff_.pop();
+  }
 
   /**
    * @brief Non blocking, immediate transmission via UART.
    *
    * @param data pointer to data to be transmitted
    * @param len number of bytes to be transmitted
-   * @return HAL_StatusTypeDef HAL_OK on success
+   * @return true on success
    */
-  HAL_StatusTypeDef transmit(uint8_t* data, size_t len);
+  bool transmit(uint8_t* data, size_t len) {
+    return HAL_UART_Transmit(&huart_, data, len, 100) == HAL_OK;
+  }
   /**
    * @brief Non blocking, immediate Used to transmit char[] arrays what are declared by the user.
    *
    * @tparam N automatically deduces by the compiler
-   * @return HAL_StatusTypeDef HAL_OK on succes
+   * @return true on success
    * @see transmit(uint8_t* data, size_t len)
    */
   template <size_t N>
-  HAL_StatusTypeDef transmit(const char (&arr)[N]);
+  bool transmit(const char (&arr)[N]) {
+    return transmit(reinterpret_cast<uint8_t*>(const_cast<char*>(arr)), N - 1);
+  }
   /**
    * @brief Non blocking, immediate transmission of a null-terminated array
    *
    * @param data pointer to null terminated char array
-   * @return HAL_StatusTypeDef HAL_OK on success
+   * @return true on success
    */
-  HAL_StatusTypeDef transmit(char* data);
+  bool transmit(char* data) {
+    return transmit(reinterpret_cast<uint8_t*>(data), strlen(data));
+  }
 
   /**
    * @brief Transmits data immediately using DMA
    *
    * @param data pointer to data
    * @param len length of data
-   * @return HAL_StatusTypeDef
+   * @return true on success
    * @see transmit(uint8_t* data, size_t len)
    */
-  HAL_StatusTypeDef transmit_DMA(uint8_t* data, size_t len);
+  bool transmit_DMA(uint8_t* data, size_t len) {
+    return HAL_UART_Transmit_DMA(&huart_, data, len) == HAL_OK;
+  }
   /**
    * @brief transmit a char[] array immediately using DMA
    *
    * @tparam N lenght of array, deduced by the compiler
-   * @return HAL_StatusTypeDef
+   * @return true on success
    * @see transmit(const char (&arr)[N])
    */
   template <size_t N>
-  HAL_StatusTypeDef transmit_DMA(const char (&arr)[N]);
+  bool transmit_DMA(const char (&arr)[N]) {
+    return transmit_DMA(reinterpret_cast<uint8_t*>(const_cast<char*>(arr)), N - 1);
+  }
   /**
    * @brief Transmits a null-terminated array immediately using DMA
    *
    * @param data pointer to null-terminated array
-   * @return HAL_StatusTypeDef
+   * @return true on success
    * @see transmit(char* data)
    */
-  HAL_StatusTypeDef transmit_DMA(char* data);
+  bool transmit_DMA(char* data) {
+    return transmit_DMA(reinterpret_cast<uint8_t*>(data), strlen(data));
+  }
   /**
    * @brief Called on UART IDLE interrupt, starts countdown
    *
    */
-  void onIdleISR() {
+  void on_idle_ISR() {
     dma_state_.countdown = 5;
   }
 
@@ -176,7 +189,7 @@ public:
    * @see HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart)
    * @see dma_state_
    */
-  void onSysTickISER() {
+  void on_systick_ISR() {
     if (dma_state_.countdown) {
       --dma_state_.countdown;
       if (dma_state_.countdown == 0) {
@@ -185,79 +198,48 @@ public:
       }
     }
   }
+
+private:
+  RingBuffer<msg_t, kTxBufferSize> tx_buff_;         //!< Tx ring buffer
+  RingBuffer<msg_t, kRxBufferSize> rx_buff_;         //!< RX Ring buffer
+  std::array<uint8_t, kDmaRxBuffSize> dma_rx_buff_;  //!< DMA buffer
+
+  /**
+   * @brief Callback for DMA complete ISR
+   *
+   * @param huart uart handle
+   */
+  friend void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart);
+
+  /**
+   * @var dma_state_
+   * @brief Anonymous struct to track IDLE line
+   * On IDLE interrupt the countdown is set to a positive value.
+   * Countdown is decremented every ms, when reaches 0, HAL_UART_RxCpltCallback is called
+   */
+  struct {
+    volatile bool flag{ false };
+    volatile uint16_t countdown{ 0 };
+    uint16_t prevCNDTR{ kDmaRxBuffSize };
+  } dma_state_;
+
+  /**
+   * @brief When getMessage is called and the buffer is empty, referenci is returned to this variable.
+   *
+   */
+  static const msg_t kEmptyMsg;
 };
 
 
-inline Uart::Uart() {
-  tx_buff_.reset();
-  rx_buff_.reset();
-}
-
-
-inline void Uart::tick() {
-  auto ptr = tx_buff_.getNextOccupied();
-  if (ptr == nullptr) return;
-  if (transmit(ptr->data()) == HAL_OK) {
-    tx_buff_.pop();
-  }
-}
-
 
 inline bool Uart::send_queue(const char* buff, size_t num) {
-  if (num > kMsgLen) return false;
-  auto buff_ptr = tx_buff_.getNextFree();
+  if (num > kMsgLen || num == 0) return false;
+  auto buff_ptr = tx_buff_.get_next_free();
   if (buff_ptr == nullptr) return false;
   memset(buff_ptr->data(), 0, buff_ptr->size());
   memcpy(buff_ptr->data(), buff, num);
   tx_buff_.push();
   return true;
-}
-
-inline HAL_StatusTypeDef Uart::transmit(uint8_t* data, size_t len) {
-  return HAL_UART_Transmit(&huart_, data, len, 500);
-}
-
-template <size_t N>
-inline HAL_StatusTypeDef Uart::transmit(const char (&arr)[N]) {
-  if (N == 0) return HAL_OK;
-  return transmit(reinterpret_cast<uint8_t*>(const_cast<char*>(arr)), N - 1);
-}
-
-inline HAL_StatusTypeDef Uart::transmit(char* data) {
-  return transmit(reinterpret_cast<uint8_t*>(data), strlen(data));
-}
-
-inline HAL_StatusTypeDef Uart::transmit_DMA(uint8_t* data, size_t len) {
-  const auto start = HAL_GetTick();
-  while (HAL_UART_Transmit_DMA(&huart_, data, len) != HAL_OK) {
-    if (HAL_GetTick() > (start + 100)) {
-      return HAL_ERROR;
-    }
-  }
-  return HAL_OK;
-}
-
-template <size_t N>
-inline HAL_StatusTypeDef Uart::transmit_DMA(const char (&arr)[N]) {
-  if (N == 0) return HAL_OK;
-  return transmit_DMA(reinterpret_cast<uint8_t*>(const_cast<char*>(arr)), N - 1);
-}
-
-inline HAL_StatusTypeDef Uart::transmit_DMA(char* data) {
-  return transmit_DMA(reinterpret_cast<uint8_t*>(data), strlen(data));
-}
-
-inline bool Uart::has_message() const {
-  return !rx_buff_.isEmpty();
-}
-
-inline const Uart::msg_t& Uart::get_message() const {
-  if(rx_buff_.isEmpty()) return kEmptyMsg;
-  return *(rx_buff_.getNextOccupied());
-}
-
-inline void Uart::pop_rx() {
-  rx_buff_.pop();
 }
 
 extern Uart uart2;

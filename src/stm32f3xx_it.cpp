@@ -88,7 +88,7 @@ void PendSV_Handler(void) {
 void SysTick_Handler(void) {
   HAL_IncTick();
   HAL_SYSTICK_IRQHandler();
-  uart2.onSysTickISER();
+  uart2.on_systick_ISR();
 }
 
 /******************************************************************************/
@@ -117,7 +117,7 @@ void DMA1_Channel7_IRQHandler(void) {
  */
 void USART2_IRQHandler(void) {
   if (USART2->ISR & USART_ISR_IDLE) {
-    uart2.onIdleISR();
+    uart2.on_idle_ISR();
     USART2->ICR |= UART_CLEAR_IDLEF;
   } else {
     HAL_UART_IRQHandler(&uart2.huart_);

@@ -1,8 +1,24 @@
-#include "uart.h"
-
 /** @file uart.cpp
  * Contains code to initialize the uart peripherial
  */
+
+#include "uart.h"
+
+const Uart::msg_t Uart::kEmptyMsg{ 0 };
+
+Uart::Uart() {
+  tx_buff_.reset();
+  rx_buff_.reset();
+}
+
+
+void Uart::tick() {
+  auto ptr = tx_buff_.get_next_occupied();
+  if (ptr == nullptr) return;
+  if (transmit(ptr->data())) {
+    tx_buff_.pop();
+  }
+}
 
 void Uart::init() {
   huart_.Instance = USART2;
@@ -114,7 +130,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
   }
 
   // get pointer to buffer
-  auto ptr = uart2.rx_buff_.getNextFree();
+  auto ptr = uart2.rx_buff_.get_next_free();
 
   if (ptr == nullptr) {
     return;
@@ -136,5 +152,7 @@ void Uart::start_listen() {
   HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
 }
+
+
 
 Uart uart2;
