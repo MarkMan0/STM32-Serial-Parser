@@ -15,7 +15,9 @@ Uart::Uart() {
 void Uart::tick() {
   auto ptr = tx_buff_.get_next_occupied();
   if (ptr == nullptr) return;
+  transmit("echo: ");
   if (transmit(ptr->data())) {
+    transmit("\n");
     tx_buff_.pop();
   }
 }
@@ -144,6 +146,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
     (*ptr)[i] = uart2.dma_rx_buff_[pos];
   }
   uart2.rx_buff_.push();
+  if (!uart2.rx_buff_.is_full()) {
+    uart2.send_queue("ok");
+  }
 }
 
 void Uart::start_listen() {

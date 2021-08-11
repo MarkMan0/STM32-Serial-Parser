@@ -24,14 +24,23 @@ int main() {
 
   uart2.send_queue(msg, len);
 
+  auto next = HAL_GetTick();
+
   while (1) {
     uart2.tick();
-    if (uart2.has_message()) {
-      const auto& msg = uart2.get_message();
-      uart2.send_queue(msg.data());
-      uart2.pop_rx();
+
+    if(HAL_GetTick() > next) {
+      next += 6000;
+      if (uart2.has_message()) {
+        const bool need_ok = uart2.is_rx_full();
+        const auto& msg = uart2.get_message();
+        uart2.send_queue(msg.data());
+        uart2.pop_rx();
+        if (need_ok) {
+          uart2.send_queue("ok");
+        }
+      }
     }
-    HAL_Delay(300);
   }
 }
 

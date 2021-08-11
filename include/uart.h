@@ -96,6 +96,15 @@ public:
   }
 
   /**
+   * @brief Is the RX buffer full?
+   * 
+   * @return true if rx buffer is full
+   */
+  bool is_rx_full() const {
+    return rx_buff_.is_full();
+  }
+
+  /**
    * @brief Get the next message from buffer
    * @details return const reference to a message, or to an internal buffer, which is all 0
    * @return const reference to message, or to an internal buffer
@@ -181,7 +190,7 @@ public:
    *
    */
   void on_idle_ISR() {
-    dma_state_.countdown = 5;
+    dma_state_.countdown = 2;
   }
 
   /**
