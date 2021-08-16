@@ -9,6 +9,7 @@
 #include <unity.h>
 
 #include "test_ring_buffer.h"
+#include "test_parser.h"
 
 void setUp(void) {
 }
@@ -21,6 +22,7 @@ int main() {
   HAL_Delay(2000);
   UNITY_BEGIN();
   RUN_TEST(test_ring_buffer);
+  RUN_TEST(test_parser);
   UNITY_END();
 
   while (1) {

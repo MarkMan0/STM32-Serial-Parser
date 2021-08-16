@@ -29,7 +29,7 @@ int main() {
   while (1) {
     uart2.tick();
 
-    if(HAL_GetTick() > next) {
+    if (HAL_GetTick() > next) {
       next += 6000;
       if (uart2.has_message()) {
         const bool need_ok = uart2.is_rx_full();

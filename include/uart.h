@@ -97,7 +97,7 @@ public:
 
   /**
    * @brief Is the RX buffer full?
-   * 
+   *
    * @return true if rx buffer is full
    */
   bool is_rx_full() const {
