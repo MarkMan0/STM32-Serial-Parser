@@ -10,7 +10,10 @@
 
 /**
  * @brief Very simple inline ring buffer, not fool-proof.
+ *
  * Will not accept incoming data when full
+ * IMPORTANT: push() shall not be called, when get_next_free returned nullptr
+ * IMPORTANT: non-const functions shall be called from within critical sections
  * @tparam T type which the buffer holds
  * @tparam L The size of the buffer
  */
@@ -80,10 +83,37 @@ public:
 
   // implementation
 private:
+  /**
+   * @brief The buffer
+   *
+   */
   std::array<data_t, buffer_size_> buffer_;
-  uint8_t head_{ 0 };
-  uint8_t tail_{ 0 };
-  bool is_full_{ false };
+  /**
+   * @brief The real head of the buffer
+   *
+   * This variable marks, where usable data is in the space it points to
+   * This is the real head, which is moved on every push()
+   */
+  volatile uint8_t head_{ 0 };
+
+  /**
+   * @brief This head is used to get the next free space
+   *
+   * Whenever get_next_free() is called this is moved forward.
+   * This is done so multiple tasks can write to the buffer concurrently
+   * Without this, get_next_free() would give the same space in the buffer to multiple tasks
+   */
+  volatile uint8_t virtual_head_{ 0 };
+  /**
+   * @brief next next occupied space
+   *
+   */
+  volatile uint8_t tail_{ 0 };
+  /**
+   * @brief To track the edge case
+   *
+   */
+  volatile bool is_full_{ false };
 };
 
 
@@ -96,12 +126,7 @@ inline void RingBuffer<T, L>::reset() {
 
 template <class T, uint8_t L>
 inline void RingBuffer<T, L>::push() {
-  const uint8_t head2 = (head_ + 1) % buffer_size_;
-  if (is_full_) return;
-  if (head2 == tail_) {
-    is_full_ = true;
-  }
-  head_ = head2;
+  head_ = (head_ + 1) % buffer_size_;
 }
 
 template <class T, uint8_t L>
@@ -116,7 +141,16 @@ inline typename RingBuffer<T, L>::data_t* RingBuffer<T, L>::get_next_free() {
   if (is_full()) {
     return nullptr;
   }
-  return &(buffer_[head_]);
+  // Get pointer to space in buffer
+  const auto ret = &(buffer_[virtual_head_]);
+  // calculate the next virtual_head_
+  const uint8_t next_v_head = (virtual_head_ + 1) % buffer_size_;
+  // track if buffer is full
+  if (next_v_head == tail_) {
+    is_full_ = true;
+  }
+  virtual_head_ = next_v_head;
+  return ret;
 }
 
 template <class T, uint8_t L>
