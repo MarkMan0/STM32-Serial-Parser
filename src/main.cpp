@@ -1,10 +1,10 @@
-
-#include "main.h"
-#include "uart.h"
-
 /** @file main.cpp
  * File containing int main()
  */
+
+#include "main.h"
+#include "uart.h"
+#include "gcode_parser.h"
 
 /**
  * @brief Configures the system clock, called from main()
@@ -16,6 +16,9 @@ int main() {
   HAL_Init();
 
   SystemClock_Config();
+
+  pins::led.init();
+
   uart2.init();
   uart2.start_listen();
 
@@ -24,21 +27,16 @@ int main() {
 
   uart2.send_queue(msg, len);
 
-  auto next = HAL_GetTick();
-
   while (1) {
     uart2.tick();
-
-    if (HAL_GetTick() > next) {
-      next += 6000;
-      if (uart2.has_message()) {
-        const bool need_ok = uart2.is_rx_full();
-        const auto& msg = uart2.get_message();
-        uart2.send_queue(msg.data());
-        uart2.pop_rx();
-        if (need_ok) {
-          uart2.send_queue("ok");
-        }
+    if (uart2.has_message()) {
+      const bool need_ok = uart2.is_rx_full();
+      const auto& msg = uart2.get_message();
+      GcodeParser::getInstance().parse_and_call(msg.data());
+      uart2.send_queue(msg.data());
+      uart2.pop_rx();
+      if (need_ok) {
+        uart2.send_queue("ok");
       }
     }
   }
