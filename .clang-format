@@ -48,6 +48,7 @@ SpaceAfterCStyleCast: false
 AlignConsecutiveMacros: true
 IndentPPDirectives: BeforeHash
 IndentExternBlock: NoIndent
+NamespaceIndentation: All
 
 # Configure each individual brace in BraceWrapping
 BreakBeforeBraces: Attach
