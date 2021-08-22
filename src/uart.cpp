@@ -47,18 +47,10 @@ void Uart::init() {
  */
 void HAL_UART_MspInit(UART_HandleTypeDef* uart) {
   if (uart->Instance == USART2) {
-    GPIO_InitTypeDef gpio{ 0 };
-
     __HAL_RCC_USART2_CLK_ENABLE();
-    __HAL_RCC_GPIOA_CLK_ENABLE();
 
-    gpio.Alternate = GPIO_AF7_USART2;
-    gpio.Mode = GPIO_MODE_AF_PP;
-    gpio.Pin = GPIO_PIN_15 | GPIO_PIN_2;
-    gpio.Pull = GPIO_NOPULL;
-    gpio.Speed = GPIO_SPEED_FREQ_HIGH;
-
-    HAL_GPIO_Init(GPIOA, &gpio);
+    pins::uart2_rx.init();
+    pins::uart2_tx.init();
 
     __HAL_RCC_DMA1_CLK_ENABLE();
 
