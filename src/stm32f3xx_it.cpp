@@ -124,4 +124,9 @@ void USART2_IRQHandler(void) {
   }
 }
 
+
+void TIM7_DAC2_IRQHandler(void) {
+  extern TIM_HandleTypeDef htim7;
+  HAL_TIM_IRQHandler(&htim7);
+}
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

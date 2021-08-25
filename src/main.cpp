@@ -6,6 +6,33 @@
 #include "uart.h"
 #include "gcode_parser.h"
 #include "pin_api.h"
+#include "cmsis_os.h"
+
+
+osThreadId_t uart_send_task_handle;
+const osThreadAttr_t uart_send_task_attributes = { .name = "uart_send_task",
+                                                   .attr_bits = 0,
+                                                   .cb_mem = nullptr,
+                                                   .cb_size = 0,
+                                                   .stack_mem = nullptr,
+                                                   .stack_size = 128 * 4,
+                                                   .priority = (osPriority_t)osPriorityNormal,
+                                                   .tz_module = 0,
+                                                   .reserved = 0 };
+void start_uart_send_task(void*);
+
+
+osThreadId_t gcode_task_handle;
+const osThreadAttr_t gcode_task_attributes = { .name = "gcode_task",
+                                               .attr_bits = 0,
+                                               .cb_mem = nullptr,
+                                               .cb_size = 0,
+                                               .stack_mem = nullptr,
+                                               .stack_size = 128 * 4,
+                                               .priority = (osPriority_t)osPriorityNormal,
+                                               .tz_module = 0,
+                                               .reserved = 0 };
+void start_gcode_task(void*);
 
 /**
  * @brief Configures the system clock, called from main()
@@ -23,13 +50,27 @@ int main() {
   uart2.init();
   uart2.start_listen();
 
-  static const char msg[] = "Hello world!\n";
-  size_t len = strlen(msg);
+  osKernelInitialize();
 
-  uart2.send_queue(msg, len);
+  uart_send_task_handle = osThreadNew(start_uart_send_task, NULL, &uart_send_task_attributes);
+  gcode_task_handle = osThreadNew(start_gcode_task, NULL, &gcode_task_attributes);
 
-  while (1) {
+  osKernelStart();
+}
+
+auto osDelayMs(uint32_t ms) -> auto {
+  return osDelay(pdMS_TO_TICKS(ms));
+}
+
+void start_uart_send_task(void* arg) {
+  while (true) {
     uart2.tick();
+    osDelayMs(100);
+  }
+}
+
+void start_gcode_task(void* arg) {
+  while (true) {
     if (uart2.has_message()) {
       const bool need_ok = uart2.is_rx_full();
       const auto& msg = uart2.get_message();
@@ -39,6 +80,8 @@ int main() {
       if (need_ok) {
         uart2.send_queue("ok");
       }
+    } else {
+      osDelayMs(100);
     }
   }
 }

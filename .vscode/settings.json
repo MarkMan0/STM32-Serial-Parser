@@ -6,7 +6,8 @@
         ".pio",
         ".vscode",
         ".git",
-        "documentation"
+        "documentation",
+        "src/FreeRTOS"
     ],
     "editor.formatOnSave": true,
     "editor.tabSize": 2,
