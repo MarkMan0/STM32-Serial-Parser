@@ -10,7 +10,6 @@
 extern "C" {
 #endif
 #include <stm32f3xx_hal.h>
-#include "pin_api.h"
 
 /**
  * @brief Called when initialization fails for peripherials

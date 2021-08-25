@@ -3,6 +3,7 @@
  */
 
 #include "uart.h"
+#include "pin_api.h"
 
 const Uart::msg_t Uart::kEmptyMsg{ 0 };
 

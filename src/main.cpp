@@ -5,6 +5,7 @@
 #include "main.h"
 #include "uart.h"
 #include "gcode_parser.h"
+#include "pin_api.h"
 
 /**
  * @brief Configures the system clock, called from main()
