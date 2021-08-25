@@ -9,6 +9,8 @@
 #include <cstring>
 #include "ring_buffer.h"
 #include <array>
+#include "FreeRTOS.h"
+#include "semphr.h"
 
 /**
  * @brief Encapsulates UART2
@@ -203,8 +205,14 @@ public:
       --dma_state_.countdown;
       if (dma_state_.countdown == 0) {
         dma_state_.flag = true;
-        huart_.hdmarx->XferCpltCallback(huart_.hdmarx);
+        HAL_NVIC_SetPendingIRQ(DMA1_Channel6_IRQn);
       }
+    }
+  }
+
+  void on_DMA_ISR() {
+    if (dma_state_.flag) {
+      huart_.hdmarx->XferCpltCallback(huart_.hdmarx);
     }
   }
 
@@ -248,6 +256,8 @@ inline bool Uart::send_queue(const char* buff, size_t num) {
   memset(buff_ptr->data(), 0, buff_ptr->size());
   memcpy(buff_ptr->data(), buff, num);
   tx_buff_.push();
+  extern SemaphoreHandle_t uart_tx_sem;
+  xSemaphoreGiveFromISR(uart_tx_sem, NULL);
   return true;
 }
 

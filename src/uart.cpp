@@ -4,6 +4,9 @@
 
 #include "uart.h"
 #include "pin_api.h"
+#include "FreeRTOS.h"
+#include "cmsis_os.h"
+#include "semphr.h"
 
 const Uart::msg_t Uart::kEmptyMsg{ 0 };
 
@@ -66,7 +69,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uart) {
     dma_tx.Init.PeriphInc = DMA_PINC_DISABLE;
     dma_tx.Init.Priority = DMA_PRIORITY_LOW;
 
-    HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 6, 0);
     HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
     if (HAL_DMA_Init(&dma_tx) != HAL_OK) {
       uart2.transmit("HAL DMA Init failed for tx");
@@ -88,7 +91,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uart) {
     __HAL_LINKDMA(uart, hdmatx, dma_tx);
     __HAL_LINKDMA(uart, hdmarx, dma_rx);
 
-    HAL_NVIC_SetPriority(USART2_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(USART2_IRQn, 6, 0);
     HAL_NVIC_EnableIRQ(USART2_IRQn);
   }
 }
@@ -139,6 +142,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
     (*ptr)[i] = uart2.dma_rx_buff_[pos];
   }
   uart2.rx_buff_.push();
+  extern SemaphoreHandle_t uart_rx_sem;
+  xSemaphoreGiveFromISR(uart_rx_sem, NULL);
   if (!uart2.rx_buff_.is_full()) {
     uart2.send_queue("ok");
   }
@@ -157,7 +162,7 @@ void Uart::start_listen() {
     Error_Handler();
   }
   /** Enable DMA1_6 interrupt */
-  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 6, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
 }
 

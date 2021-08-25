@@ -6,8 +6,9 @@
 #include "uart.h"
 #include "gcode_parser.h"
 #include "pin_api.h"
+#include "FreeRTOS.h"
 #include "cmsis_os.h"
-
+#include "semphr.h"
 
 osThreadId_t uart_send_task_handle;
 const osThreadAttr_t uart_send_task_attributes = { .name = "uart_send_task",
@@ -21,6 +22,7 @@ const osThreadAttr_t uart_send_task_attributes = { .name = "uart_send_task",
                                                    .reserved = 0 };
 void start_uart_send_task(void*);
 
+SemaphoreHandle_t uart_rx_sem, uart_tx_sem;
 
 osThreadId_t gcode_task_handle;
 const osThreadAttr_t gcode_task_attributes = { .name = "gcode_task",
@@ -52,6 +54,9 @@ int main() {
 
   osKernelInitialize();
 
+  uart_rx_sem = xSemaphoreCreateBinary();
+  uart_tx_sem = xSemaphoreCreateBinary();
+
   uart_send_task_handle = osThreadNew(start_uart_send_task, NULL, &uart_send_task_attributes);
   gcode_task_handle = osThreadNew(start_gcode_task, NULL, &gcode_task_attributes);
 
@@ -64,24 +69,29 @@ auto osDelayMs(uint32_t ms) -> auto {
 
 void start_uart_send_task(void* arg) {
   while (true) {
-    uart2.tick();
-    osDelayMs(100);
+    if (xSemaphoreTake(uart_tx_sem, pdMS_TO_TICKS(1000))) {
+      uart2.tick();
+    } else {
+      uart2.transmit("uart_tx timeout");
+    }
   }
 }
 
 void start_gcode_task(void* arg) {
   while (true) {
-    if (uart2.has_message()) {
-      const bool need_ok = uart2.is_rx_full();
-      const auto& msg = uart2.get_message();
-      GcodeParser::getInstance().parse_and_call(msg.data());
-      uart2.send_queue(msg.data());
-      uart2.pop_rx();
-      if (need_ok) {
-        uart2.send_queue("ok");
+    if (xSemaphoreTake(uart_rx_sem, pdMS_TO_TICKS(1000))) {
+      if (uart2.has_message()) {
+        const bool need_ok = uart2.is_rx_full();
+        const auto& msg = uart2.get_message();
+        GcodeParser::getInstance().parse_and_call(msg.data());
+        uart2.send_queue(msg.data());
+        uart2.pop_rx();
+        if (need_ok) {
+          uart2.send_queue("ok");
+        }
       }
     } else {
-      osDelayMs(100);
+      uart2.transmit("uart_rx timeout");
     }
   }
 }

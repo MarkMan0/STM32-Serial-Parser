@@ -103,6 +103,7 @@ void SysTick_Handler(void) {
  */
 void DMA1_Channel6_IRQHandler(void) {
   HAL_DMA_IRQHandler(uart2.huart_.hdmarx);
+  uart2.on_DMA_ISR();
 }
 
 /**
