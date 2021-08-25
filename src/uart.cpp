@@ -17,12 +17,14 @@ Uart::Uart() {
 
 
 void Uart::tick() {
-  auto ptr = tx_buff_.get_next_occupied();
-  if (ptr == nullptr) return;
-  transmit("echo: ");
-  if (transmit(ptr->data())) {
-    transmit("\n");
-    tx_buff_.pop();
+  while (!tx_buff_.is_empty()) {
+    auto ptr = tx_buff_.get_next_occupied();
+    if (ptr == nullptr) return;
+    transmit("echo: ");
+    if (transmit(ptr->data())) {
+      transmit("\n");
+      tx_buff_.pop();
+    }
   }
 }
 

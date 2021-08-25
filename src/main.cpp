@@ -69,17 +69,15 @@ auto osDelayMs(uint32_t ms) -> auto {
 
 void start_uart_send_task(void* arg) {
   while (true) {
-    if (xSemaphoreTake(uart_tx_sem, pdMS_TO_TICKS(1000))) {
+    if (xSemaphoreTake(uart_tx_sem, portMAX_DELAY)) {
       uart2.tick();
-    } else {
-      uart2.transmit("uart_tx timeout");
     }
   }
 }
 
 void start_gcode_task(void* arg) {
   while (true) {
-    if (xSemaphoreTake(uart_rx_sem, pdMS_TO_TICKS(1000))) {
+    if (xSemaphoreTake(uart_rx_sem, portMAX_DELAY)) {
       if (uart2.has_message()) {
         const bool need_ok = uart2.is_rx_full();
         const auto& msg = uart2.get_message();
@@ -90,8 +88,6 @@ void start_gcode_task(void* arg) {
           uart2.send_queue("ok");
         }
       }
-    } else {
-      uart2.transmit("uart_rx timeout");
     }
   }
 }
