@@ -9,7 +9,7 @@
         "documentation",
         "src/FreeRTOS"
     ],
-    "editor.formatOnSave": true,
+    "editor.formatOnSave": false,
     "editor.tabSize": 2,
     "editor.insertSpaces": true,
     "files.insertFinalNewline": true,
