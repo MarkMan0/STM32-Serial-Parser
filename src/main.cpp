@@ -11,7 +11,23 @@
 #include "semphr.h"
 
 
+osThreadId_t periodic_send_task_handle;
+const osThreadAttr_t periodic_send_attr = { .name = "periodic_send_task",
+                                            .attr_bits = 0,
+                                            .cb_mem = nullptr,
+                                            .cb_size = 0,
+                                            .stack_mem = nullptr,
+                                            .stack_size = 128 * 4,
+                                            .priority = (osPriority_t)osPriorityBelowNormal1,
+                                            .tz_module = 0,
+                                            .reserved = 0 };  //!< send task attributes
 
+void periodic_send_task(void* arg) {
+  while(1) {
+    uart2.send_queue("Hello");
+    osDelay(pdMS_TO_TICKS(5000));
+  }
+}
 
 /**
  * @brief Configures the system clock, called from main()
@@ -32,6 +48,8 @@ int main() {
 
   uart2.begin();
   gcode.begin();
+
+  periodic_send_task_handle = osThreadNew(periodic_send_task, NULL, &periodic_send_attr);
 
   osKernelStart();
 }
