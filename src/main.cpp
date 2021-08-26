@@ -63,10 +63,6 @@ int main() {
   osKernelStart();
 }
 
-auto osDelayMs(uint32_t ms) -> auto {
-  return osDelay(pdMS_TO_TICKS(ms));
-}
-
 void start_uart_send_task(void* arg) {
   while (true) {
     if (xSemaphoreTake(uart_tx_sem, portMAX_DELAY)) {

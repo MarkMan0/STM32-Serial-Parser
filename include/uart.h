@@ -53,7 +53,7 @@ public:
    * @param num length of data
    * @return true on succes, false if couldn't enqueue
    */
-  bool send_queue(const char* buff, size_t num);
+  bool send_queue(const char* buff, size_t num, bool from_isr = false);
 
   /**
    * @brief put a known-size array into send queue
@@ -62,8 +62,8 @@ public:
    * @return true on success
    */
   template <size_t N>
-  bool send_queue(const char (&arr)[N]) {
-    return send_queue(arr, N);
+  bool send_queue(const char (&arr)[N], bool from_isr = false) {
+    return send_queue(arr, N, from_isr);
   }
 
   /**
@@ -72,8 +72,8 @@ public:
    * @param data pointer to null terminated char array
    * @return true on success
    */
-  bool send_queue(const char* data) {
-    return send_queue(data, strlen(data));
+  bool send_queue(const char* data, bool from_isr = false) {
+    return send_queue(data, strlen(data), from_isr);
   }
 
   /**
@@ -249,9 +249,15 @@ private:
 
 
 
-inline bool Uart::send_queue(const char* buff, size_t num) {
+inline bool Uart::send_queue(const char* buff, size_t num, bool from_isr) {
   if (num > kMsgLen || num == 0) return false;
+  if (!from_isr) {
+    vPortEnterCritical();
+  }
   auto buff_ptr = tx_buff_.get_next_free();
+  if (!from_isr) {
+    vPortExitCritical();
+  }
   if (buff_ptr == nullptr) return false;
   memset(buff_ptr->data(), 0, buff_ptr->size());
   memcpy(buff_ptr->data(), buff, num);

@@ -147,7 +147,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
   extern SemaphoreHandle_t uart_rx_sem;
   xSemaphoreGiveFromISR(uart_rx_sem, NULL);
   if (!uart2.rx_buff_.is_full()) {
-    uart2.send_queue("ok");
+    uart2.send_queue("ok", true);
   }
 }
 
