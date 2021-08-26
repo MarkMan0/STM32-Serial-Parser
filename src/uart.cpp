@@ -8,7 +8,19 @@
 #include "cmsis_os.h"
 #include "semphr.h"
 
+// Static members
 const Uart::msg_t Uart::kEmptyMsg{ 0 };
+constexpr osThreadAttr_t Uart::kUartSendTaskAttr;
+
+void Uart::uart_transmit_task(void* arg) {
+  while (true) {
+    if (xSemaphoreTake(uart2.tx_semaphore_, portMAX_DELAY)) {
+      uart2.tick();
+    }
+  }
+}
+
+// Member function definitions
 
 Uart::Uart() {
   tx_buff_.reset();
@@ -28,7 +40,7 @@ void Uart::tick() {
   }
 }
 
-void Uart::init() {
+void Uart::init_peripherals() {
   huart_.Instance = USART2;
   huart_.Init.BaudRate = 115200;
   huart_.Init.WordLength = UART_WORDLENGTH_8B;
@@ -71,8 +83,6 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uart) {
     dma_tx.Init.PeriphInc = DMA_PINC_DISABLE;
     dma_tx.Init.Priority = DMA_PRIORITY_LOW;
 
-    HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 6, 0);
-    HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
     if (HAL_DMA_Init(&dma_tx) != HAL_OK) {
       uart2.transmit("HAL DMA Init failed for tx");
     }
@@ -92,9 +102,6 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uart) {
 
     __HAL_LINKDMA(uart, hdmatx, dma_tx);
     __HAL_LINKDMA(uart, hdmarx, dma_rx);
-
-    HAL_NVIC_SetPriority(USART2_IRQn, 6, 0);
-    HAL_NVIC_EnableIRQ(USART2_IRQn);
   }
 }
 
@@ -146,14 +153,27 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
   uart2.rx_buff_.push();
 
   /** Give rx semaphore */
-  extern SemaphoreHandle_t uart_rx_sem;
-  xSemaphoreGiveFromISR(uart_rx_sem, NULL);
+  xSemaphoreGiveFromISR(uart2.rx_semaphore_, NULL);
   if (!uart2.rx_buff_.is_full()) {
     uart2.send_queue("ok", true);
   }
 }
 
-void Uart::start_listen() {
+void Uart::begin() {
+  /** create sempahores and start tasks*/
+  rx_semaphore_ = xSemaphoreCreateCounting(kRxBufferSize, 0);
+  tx_semaphore_ = xSemaphoreCreateCounting(kTxBufferSize, 0);
+
+  uart_send_task_handle_ = osThreadNew(Uart::uart_transmit_task, NULL, &kUartSendTaskAttr);
+
+  /** Start transmit DMA IRQ*/
+  HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 6, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
+
+  /** Start USART2 IRQ*/
+  HAL_NVIC_SetPriority(USART2_IRQn, 6, 0);
+  HAL_NVIC_EnableIRQ(USART2_IRQn);
+
   /**Enable USART 2 IDLE interrupt and register callback */
   SET_BIT(USART2->CR1, USART_CR1_IDLEIE);
   if (HAL_UART_RegisterCallback(&uart2.huart_, HAL_UART_RX_COMPLETE_CB_ID, HAL_UART_RxCpltCallback) != HAL_OK) {

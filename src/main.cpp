@@ -10,19 +10,7 @@
 #include "cmsis_os.h"
 #include "semphr.h"
 
-osThreadId_t uart_send_task_handle;
-const osThreadAttr_t uart_send_task_attributes = { .name = "uart_send_task",
-                                                   .attr_bits = 0,
-                                                   .cb_mem = nullptr,
-                                                   .cb_size = 0,
-                                                   .stack_mem = nullptr,
-                                                   .stack_size = 128 * 4,
-                                                   .priority = (osPriority_t)osPriorityNormal,
-                                                   .tz_module = 0,
-                                                   .reserved = 0 };
-void start_uart_send_task(void*);
 
-SemaphoreHandle_t uart_rx_sem, uart_tx_sem;
 
 osThreadId_t gcode_task_handle;
 const osThreadAttr_t gcode_task_attributes = { .name = "gcode_task",
@@ -49,33 +37,15 @@ int main() {
 
   pins::led.init();
 
-  uart2.init();
-  uart2.start_listen();
+  uart2.init_peripherals();
 
   osKernelInitialize();
 
-  uart_rx_sem = xSemaphoreCreateBinary();
-  uart_tx_sem = xSemaphoreCreateBinary();
+  uart2.begin();
 
-  uart_send_task_handle = osThreadNew(start_uart_send_task, NULL, &uart_send_task_attributes);
   gcode_task_handle = osThreadNew(start_gcode_task, NULL, &gcode_task_attributes);
 
   osKernelStart();
-}
-
-/**
- * @brief Waits for outbound data and transmits
- *
- * Takes uart_tx_sem, and transmits all the data in the ring buffer
- *
- * @param arg
- */
-void start_uart_send_task(void* arg) {
-  while (true) {
-    if (xSemaphoreTake(uart_tx_sem, portMAX_DELAY)) {
-      uart2.tick();
-    }
-  }
 }
 
 /**
@@ -87,7 +57,7 @@ void start_uart_send_task(void* arg) {
  */
 void start_gcode_task(void* arg) {
   while (true) {
-    if (xSemaphoreTake(uart_rx_sem, portMAX_DELAY)) {
+    if (xSemaphoreTake(uart2.rx_semaphore_, portMAX_DELAY)) {
       while (uart2.has_message()) {
         const bool need_ok = uart2.is_rx_full();
         const auto& msg = uart2.get_message();

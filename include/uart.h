@@ -10,6 +10,7 @@
 #include "ring_buffer.h"
 #include <array>
 #include "FreeRTOS.h"
+#include "cmsis_os.h"
 #include "semphr.h"
 
 /**
@@ -80,16 +81,16 @@ public:
   }
 
   /**
-   * @brief Starts listening for incoming messages
+   * @brief Starts the ISRs, the freeRTOS tasks and begins transmission/reception
    *
    */
-  void start_listen();
+  void begin();
 
   /**
    * @brief initializes the UART peripherial
    *
    */
-  void init();
+  void init_peripherals();
 
   /**
    * @brief Check if RX buffer has data
@@ -208,21 +209,51 @@ public:
       --dma_state_.countdown;
       if (dma_state_.countdown == 0) {
         dma_state_.flag = true;
+        // we cant call XferCpltCallback, because of FreeRTOS, this ISR's priority is too high
         HAL_NVIC_SetPendingIRQ(DMA1_Channel6_IRQn);
       }
     }
   }
 
+  /**
+   * @brief used to call XferCpltCallback when flag is set
+   *
+   * calling from HAL tick ISR doesn't work with freertos, it's priority is too high
+   */
   void on_DMA_ISR() {
     if (dma_state_.flag) {
       huart_.hdmarx->XferCpltCallback(huart_.hdmarx);
     }
   }
 
+  /**
+   * @brief This task uses the rx_semaphore_
+   *
+   */
+  friend void start_gcode_task(void*);
+
 private:
   RingBuffer<msg_t, kTxBufferSize> tx_buff_;         //!< Tx ring buffer
   RingBuffer<msg_t, kRxBufferSize> rx_buff_;         //!< RX Ring buffer
   std::array<uint8_t, kDmaRxBuffSize> dma_rx_buff_;  //!< DMA buffer
+  SemaphoreHandle_t rx_semaphore_, tx_semaphore_;    //!< RTOS semaphores
+  osThreadId_t uart_send_task_handle_;               //!< RTOS handle to task
+  static constexpr osThreadAttr_t kUartSendTaskAttr = { .name = "uart_send_task",
+                                                        .attr_bits = 0,
+                                                        .cb_mem = nullptr,
+                                                        .cb_size = 0,
+                                                        .stack_mem = nullptr,
+                                                        .stack_size = 128 * 4,
+                                                        .priority = (osPriority_t)osPriorityNormal,
+                                                        .tz_module = 0,
+                                                        .reserved = 0 };  //!< send task attributes
+
+  /**
+   * @brief Task to transmit from ringBuffer
+   *
+   * Task waits for sempahore, and upon acquiring, transmits all available data from buffer
+   */
+  static void uart_transmit_task(void*);
 
   /**
    * @brief Callback for DMA complete ISR
@@ -267,8 +298,7 @@ inline bool Uart::send_queue(const char* buff, size_t num, bool from_isr) {
   memcpy(buff_ptr->data(), buff, num);
   tx_buff_.push();
   /** Give TX semaphore */
-  extern SemaphoreHandle_t uart_tx_sem;
-  xSemaphoreGiveFromISR(uart_tx_sem, NULL);
+  xSemaphoreGiveFromISR(tx_semaphore_, NULL);
   return true;
 }
 
