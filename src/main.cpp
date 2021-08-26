@@ -12,17 +12,6 @@
 
 
 
-osThreadId_t gcode_task_handle;
-const osThreadAttr_t gcode_task_attributes = { .name = "gcode_task",
-                                               .attr_bits = 0,
-                                               .cb_mem = nullptr,
-                                               .cb_size = 0,
-                                               .stack_mem = nullptr,
-                                               .stack_size = 128 * 4,
-                                               .priority = (osPriority_t)osPriorityNormal,
-                                               .tz_module = 0,
-                                               .reserved = 0 };
-void start_gcode_task(void*);
 
 /**
  * @brief Configures the system clock, called from main()
@@ -42,35 +31,11 @@ int main() {
   osKernelInitialize();
 
   uart2.begin();
-
-  gcode_task_handle = osThreadNew(start_gcode_task, NULL, &gcode_task_attributes);
+  gcode.begin();
 
   osKernelStart();
 }
 
-/**
- * @brief Waits for inbound data and processes
- *
- * When task takes uart_rx_sem, it processes all of the data in the rin buffer
- *
- * @param arg
- */
-void start_gcode_task(void* arg) {
-  while (true) {
-    if (xSemaphoreTake(uart2.rx_semaphore_, portMAX_DELAY)) {
-      while (uart2.has_message()) {
-        const bool need_ok = uart2.is_rx_full();
-        const auto& msg = uart2.get_message();
-        GcodeParser::getInstance().parse_and_call(msg.data());
-        uart2.send_queue(msg.data());
-        uart2.pop_rx();
-        if (need_ok) {
-          uart2.send_queue("ok");
-        }
-      }
-    }
-  }
-}
 
 void Error_Handler() {
   while (1) {

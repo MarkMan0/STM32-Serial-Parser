@@ -1,10 +1,39 @@
 #include "gcode_parser.h"
 
+#include "FreeRTOS.h"
+#include "cmsis_os.h"
+#include "semphr.h"
+
+#include "uart.h"
+
 /**
  * @file gcode_parser.cpp
  * @brief Function definitions for GcodeParser class
  *
  */
+
+constexpr osThreadAttr_t GcodeParser::kGcodeTaskAttr_;
+
+void GcodeParser::gcode_task(void* arg) {
+  while (1) {
+    if (xSemaphoreTake(uart2.rx_semaphore_, portMAX_DELAY)) {
+      while (uart2.has_message()) {
+        const bool need_ok = uart2.is_rx_full();
+        const auto& msg = uart2.get_message();
+        gcode.parse_and_call(msg.data());
+        uart2.send_queue(msg.data());
+        uart2.pop_rx();
+        if (need_ok) {
+          uart2.send_queue("ok");
+        }
+      }
+    }
+  }
+}
+
+void GcodeParser::begin() {
+  gcode_task_handle_ = osThreadNew(GcodeParser::gcode_task, NULL, &GcodeParser::kGcodeTaskAttr_);
+}
 
 void GcodeParser::parse_and_call(const char* arr) {
   parser_.set_string(arr);
@@ -31,3 +60,6 @@ void GcodeParser::parse_A() {
       break;
   }
 }
+
+
+GcodeParser gcode;

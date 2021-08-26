@@ -227,10 +227,10 @@ public:
   }
 
   /**
-   * @brief This task uses the rx_semaphore_
+   * @brief GcodeParser needs direct access to rx semaphore
    *
    */
-  friend void start_gcode_task(void*);
+  friend class GcodeParser;
 
 private:
   RingBuffer<msg_t, kTxBufferSize> tx_buff_;         //!< Tx ring buffer
