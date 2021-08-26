@@ -63,6 +63,13 @@ int main() {
   osKernelStart();
 }
 
+/**
+ * @brief Waits for outbound data and transmits
+ *
+ * Takes uart_tx_sem, and transmits all the data in the ring buffer
+ *
+ * @param arg
+ */
 void start_uart_send_task(void* arg) {
   while (true) {
     if (xSemaphoreTake(uart_tx_sem, portMAX_DELAY)) {
@@ -71,10 +78,17 @@ void start_uart_send_task(void* arg) {
   }
 }
 
+/**
+ * @brief Waits for inbound data and processes
+ *
+ * When task takes uart_rx_sem, it processes all of the data in the rin buffer
+ *
+ * @param arg
+ */
 void start_gcode_task(void* arg) {
   while (true) {
     if (xSemaphoreTake(uart_rx_sem, portMAX_DELAY)) {
-      if (uart2.has_message()) {
+      while (uart2.has_message()) {
         const bool need_ok = uart2.is_rx_full();
         const auto& msg = uart2.get_message();
         GcodeParser::getInstance().parse_and_call(msg.data());

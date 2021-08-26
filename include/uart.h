@@ -51,6 +51,7 @@ public:
    *
    * @param buff pointer to data to be transmitted
    * @param num length of data
+   * @param from_isr set to true if function is called from ISR
    * @return true on succes, false if couldn't enqueue
    */
   bool send_queue(const char* buff, size_t num, bool from_isr = false);
@@ -59,6 +60,7 @@ public:
    * @brief put a known-size array into send queue
    *
    * @tparam N automatically deduced size of array
+   * @param from_isr set to true if function is called from ISR
    * @return true on success
    */
   template <size_t N>
@@ -70,6 +72,7 @@ public:
    * @brief put a null-terminated array into send queue
    *
    * @param data pointer to null terminated char array
+   * @param from_isr set to true if function is called from ISR
    * @return true on success
    */
   bool send_queue(const char* data, bool from_isr = false) {
@@ -251,6 +254,7 @@ private:
 
 inline bool Uart::send_queue(const char* buff, size_t num, bool from_isr) {
   if (num > kMsgLen || num == 0) return false;
+  // if called from ISR, don't use critical section
   if (!from_isr) {
     vPortEnterCritical();
   }
@@ -262,6 +266,7 @@ inline bool Uart::send_queue(const char* buff, size_t num, bool from_isr) {
   memset(buff_ptr->data(), 0, buff_ptr->size());
   memcpy(buff_ptr->data(), buff, num);
   tx_buff_.push();
+  /** Give TX semaphore */
   extern SemaphoreHandle_t uart_tx_sem;
   xSemaphoreGiveFromISR(uart_tx_sem, NULL);
   return true;

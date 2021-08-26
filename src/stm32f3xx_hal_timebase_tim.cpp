@@ -1,4 +1,3 @@
-/* USER CODE BEGIN Header */
 /**
  ******************************************************************************
  * @file    stm32f3xx_hal_timebase_TIM.c
@@ -16,20 +15,11 @@
  *
  ******************************************************************************
  */
-/* USER CODE END Header */
-
-/* Includes ------------------------------------------------------------------*/
 #include "stm32f3xx_hal.h"
 #include "stm32f3xx_hal_tim.h"
 #include "uart.h"
 
-/* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
-/* Private macro -------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
 TIM_HandleTypeDef htim7;
-/* Private function prototypes -----------------------------------------------*/
-/* Private functions ---------------------------------------------------------*/
 
 /**
  * @brief  This function configures the TIM7 as a time base source.
@@ -91,7 +81,6 @@ HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority) {
  * @retval None
  */
 void HAL_SuspendTick(void) {
-  /* Disable TIM7 update Interrupt */
   __HAL_TIM_DISABLE_IT(&htim7, TIM_IT_UPDATE);
 }
 
@@ -102,21 +91,14 @@ void HAL_SuspendTick(void) {
  * @retval None
  */
 void HAL_ResumeTick(void) {
-  /* Enable TIM7 Update interrupt */
   __HAL_TIM_ENABLE_IT(&htim7, TIM_IT_UPDATE);
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
-  /* USER CODE BEGIN Callback 0 */
-
-  /* USER CODE END Callback 0 */
   if (htim->Instance == TIM7) {
     HAL_IncTick();
     uart2.on_systick_ISR();
   }
-  /* USER CODE BEGIN Callback 1 */
-
-  /* USER CODE END Callback 1 */
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

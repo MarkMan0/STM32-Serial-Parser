@@ -125,7 +125,10 @@ void USART2_IRQHandler(void) {
   }
 }
 
-
+/**
+ * @brief TIM7 ISR, TIM7 is used for HAL tick
+ *
+ */
 void TIM7_DAC2_IRQHandler(void) {
   extern TIM_HandleTypeDef htim7;
   HAL_TIM_IRQHandler(&htim7);
