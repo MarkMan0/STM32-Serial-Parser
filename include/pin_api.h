@@ -135,11 +135,12 @@ private:
     }
   }
 };
+
+/**
+ * @brief Pin definitions
+ *
+ */
 namespace pins {
-  /**
-   * @brief Pin definitions
-   *
-   */
   // clang-format off
   constexpr Pin_t
       led{ GPIOB_BASE, GPIO_PIN_3, GPIO_MODE_OUTPUT_PP, GPIO_NOPULL, GPIO_SPEED_FREQ_LOW, 0 },
