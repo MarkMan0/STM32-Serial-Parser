@@ -9,6 +9,8 @@
 #include "FreeRTOS.h"
 #include "cmsis_os.h"
 #include "semphr.h"
+#include "utils.h"
+#include "adc.h"
 
 
 osThreadId_t periodic_send_task_handle;
@@ -23,9 +25,37 @@ const osThreadAttr_t periodic_send_attr = { .name = "periodic_send_task",
                                             .reserved = 0 };  //!< send task attributes
 
 void periodic_send_task(void* arg) {
-  while(1) {
-    uart2.send_queue("Hello");
-    osDelay(pdMS_TO_TICKS(5000));
+  constexpr size_t buff_sz{ 30 };
+  char buff[buff_sz];
+  while (1) {
+    adc1.stop_adc();
+    pins::A0.config_channel();
+    adc1.start_adc();
+    while (HAL_ADC_PollForConversion(&adc1.hadc1_, 1) == HAL_TIMEOUT) {
+      osDelay(pdMS_TO_TICKS(5));
+    }
+    sniprintf(buff, buff_sz - 1, "%d", static_cast<int>(100 * adc1.read_volt()));
+    uart2.send_queue(buff);
+    osDelay(pdMS_TO_TICKS(100));
+  }
+}
+
+
+osThreadId_t toggle_task_handle;
+const osThreadAttr_t toggle_task_attr = { .name = "toggle_task",
+                                          .attr_bits = 0,
+                                          .cb_mem = nullptr,
+                                          .cb_size = 0,
+                                          .stack_mem = nullptr,
+                                          .stack_size = 128 * 4,
+                                          .priority = (osPriority_t)osPriorityBelowNormal1,
+                                          .tz_module = 0,
+                                          .reserved = 0 };
+
+void toggle_task(void* arg) {
+  while (1) {
+    pins::A1.toggle();
+    osDelay(pdMS_TO_TICKS(2000));
   }
 }
 
@@ -41,8 +71,11 @@ int main() {
   SystemClock_Config();
 
   pins::led.init();
+  pins::A1.init();
+  pins::A0.init();
 
   uart2.init_peripherals();
+  adc1.init_adc();
 
   osKernelInitialize();
 
@@ -50,6 +83,7 @@ int main() {
   gcode.begin();
 
   periodic_send_task_handle = osThreadNew(periodic_send_task, NULL, &periodic_send_attr);
+  toggle_task_handle = osThreadNew(toggle_task, NULL, &toggle_task_attr);
 
   osKernelStart();
 }
@@ -63,6 +97,7 @@ void Error_Handler() {
 void SystemClock_Config(void) {
   RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
   RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = { 0 };
 
   /** Initializes the RCC Oscillators according to the specified parameters
    * in the RCC_OscInitTypeDef structure.
@@ -73,9 +108,9 @@ void SystemClock_Config(void) {
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL16;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
-    Error_Handler();
-  }
+
+  utils::hal_wrap(HAL_RCC_OscConfig(&RCC_OscInitStruct));
+
   /** Initializes the CPU, AHB and APB buses clocks
    */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
@@ -84,9 +119,12 @@ void SystemClock_Config(void) {
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) {
-    Error_Handler();
-  }
+  utils::hal_wrap(HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2));
+
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC12;
+  PeriphClkInit.Adc12ClockSelection = RCC_ADC12PLLCLK_DIV8;
+
+  utils::hal_wrap(HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit));
 }
 
 /**
