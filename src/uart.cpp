@@ -7,6 +7,7 @@
 #include "FreeRTOS.h"
 #include "cmsis_os.h"
 #include "semphr.h"
+#include "utils.h"
 
 // Static members
 const Uart::msg_t Uart::kEmptyMsg{ 0 };
@@ -52,9 +53,8 @@ void Uart::init_peripherals() {
   huart_.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
 
   huart_.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart_) != HAL_OK) {
-    Error_Handler();
-  }
+
+  utils::hal_wrap(HAL_UART_Init(&huart_));
 }
 
 /**
@@ -176,15 +176,11 @@ void Uart::begin() {
 
   /**Enable USART 2 IDLE interrupt and register callback */
   SET_BIT(USART2->CR1, USART_CR1_IDLEIE);
-  if (HAL_UART_RegisterCallback(&uart2.huart_, HAL_UART_RX_COMPLETE_CB_ID, HAL_UART_RxCpltCallback) != HAL_OK) {
-    uart2.transmit("Couldn't register callback");
-    Error_Handler();
-  }
+  utils::hal_wrap(HAL_UART_RegisterCallback(&uart2.huart_, HAL_UART_RX_COMPLETE_CB_ID, HAL_UART_RxCpltCallback));
+
   /** Start receiving */
-  if (HAL_UART_Receive_DMA(&huart_, dma_rx_buff_.data(), dma_rx_buff_.size()) != HAL_OK) {
-    uart2.transmit("Couldn't start receive DMA");
-    Error_Handler();
-  }
+  utils::hal_wrap(HAL_UART_Receive_DMA(&huart_, dma_rx_buff_.data(), dma_rx_buff_.size()));
+
   /** Enable DMA1_6 interrupt */
   HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 6, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
