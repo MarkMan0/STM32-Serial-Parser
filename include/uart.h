@@ -25,9 +25,9 @@ class Uart {
 public:
   static constexpr size_t kTxBufferSize = 5,  //!< The size of the transmission ring buffer
       kRxBufferSize = 5,                      //!< The size of the Rx Ring buffer
-      kMsgLen = 30,                            //!< Max lenth of a message to transmit
-      kDmaRxBuffSize = 30;                     //!< RX DMA buffer size
-  using msg_t = std::array<char, kMsgLen>;     //!< message type alias
+      kMsgLen = 30,                           //!< Max lenth of a message to transmit
+      kDmaRxBuffSize = 30;                    //!< RX DMA buffer size
+  using msg_t = std::array<char, kMsgLen>;    //!< message type alias
 
   /**
    * @brief handle to uart
@@ -239,7 +239,15 @@ private:
   std::array<uint8_t, kDmaRxBuffSize> dma_rx_buff_;  //!< DMA buffer
   SemaphoreHandle_t rx_semaphore_, tx_semaphore_;    //!< RTOS semaphores
   osThreadId_t uart_send_task_handle_;               //!< RTOS handle to task
-  const osThreadAttr_t kUartSendTaskAttr{utils::create_thread_attr("uart_send", 128*4, osPriorityNormal1)};
+  const osThreadAttr_t kUartSendTaskAttr{ utils::create_thread_attr("uart_send", 128 * 4, osPriorityAboveNormal7) };
+
+  /**
+   * @brief Get the next free in buffer, block and yield if can't
+   *
+   * @param timeout max time to wait in ms
+   * @return msg_t*
+   */
+  msg_t* get_next_free_or_yield(uint32_t timeout);
 
   /**
    * @brief Task to transmit from ringBuffer
@@ -274,26 +282,6 @@ private:
   static const msg_t kEmptyMsg;
 };
 
-
-
-inline bool Uart::send_queue(const char* buff, size_t num, bool from_isr) {
-  if (num > kMsgLen || num == 0) return false;
-  // if called from ISR, don't use critical section
-  if (!from_isr) {
-    vPortEnterCritical();
-  }
-  auto buff_ptr = tx_buff_.get_next_free();
-  if (!from_isr) {
-    vPortExitCritical();
-  }
-  if (buff_ptr == nullptr) return false;
-  memset(buff_ptr->data(), 0, buff_ptr->size());
-  memcpy(buff_ptr->data(), buff, num);
-  tx_buff_.push();
-  /** Give TX semaphore */
-  xSemaphoreGiveFromISR(tx_semaphore_, NULL);
-  return true;
-}
 
 extern Uart uart2;
 

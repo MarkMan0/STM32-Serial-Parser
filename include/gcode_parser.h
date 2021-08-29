@@ -51,7 +51,7 @@ public:
 private:
   Parser parser_;                  /*!< Parser */
   osThreadId_t gcode_task_handle_; /*!< gcode task handle*/
-  const osThreadAttr_t kGcodeTaskAttr_ = utils::create_thread_attr("gcode_task", 128*4, osPriorityNormal);
+  const osThreadAttr_t kGcodeTaskAttr_ = utils::create_thread_attr("gcode_task", 128*4, osPriorityAboveNormal7);
 
   /**
    * @brief The gcode task, which calls gcodes

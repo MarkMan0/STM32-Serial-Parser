@@ -185,6 +185,48 @@ void Uart::begin() {
   HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
 }
 
+Uart::msg_t* Uart::get_next_free_or_yield(uint32_t timeout) {
+  bool exit = false;
+  msg_t* ptr{ nullptr };
+  const uint32_t start = HAL_GetTick();
+  do {
+    vPortEnterCritical();
+    ptr = tx_buff_.get_next_free();
+    vPortExitCritical();
+
+    if (ptr == nullptr && HAL_GetTick() - start < timeout) {
+      taskYIELD();
+      exit = true;
+    } else {
+      exit = true;
+    }
+  } while (!exit);
+
+  return ptr;
+}
+
+bool Uart::send_queue(const char* buff, size_t num, bool from_isr) {
+  if (num > kMsgLen || num == 0) return false;
+
+  msg_t* buff_ptr{nullptr};
+
+  if(from_isr) {
+    buff_ptr = tx_buff_.get_next_free();
+  } else {
+    buff_ptr = get_next_free_or_yield(5);
+  }
+
+  if(!buff_ptr) {
+    return false;
+  }
+
+  memset(buff_ptr->data(), 0, buff_ptr->size());
+  memcpy(buff_ptr->data(), buff, num);
+  tx_buff_.push();
+  /** Give TX semaphore */
+  xSemaphoreGiveFromISR(tx_semaphore_, NULL);
+  return true;
+}
 
 
 Uart uart2;
