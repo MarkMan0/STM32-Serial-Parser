@@ -60,7 +60,7 @@ int main() {
 
   uart2.init_peripherals();
   adc1.init_adc();
-
+  i2c.init_peripheral();
   osKernelInitialize();
 
   uart2.begin();
@@ -105,8 +105,9 @@ void SystemClock_Config(void) {
 
   utils::hal_wrap(HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2));
 
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC12;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC12 | RCC_PERIPHCLK_I2C1;
   PeriphClkInit.Adc12ClockSelection = RCC_ADC12PLLCLK_DIV8;
+  PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_HSI;
 
   utils::hal_wrap(HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit));
 }
