@@ -22,8 +22,8 @@
  */
 class Uart {
 public:
-  static constexpr size_t kTxBufferSize = 10,  //!< The size of the transmission ring buffer
-      kRxBufferSize = 10,                      //!< The size of the Rx Ring buffer
+  static constexpr size_t kTxBufferSize = 5,  //!< The size of the transmission ring buffer
+      kRxBufferSize = 5,                      //!< The size of the Rx Ring buffer
       kMsgLen = 30,                            //!< Max lenth of a message to transmit
       kDmaRxBuffSize = 30;                     //!< RX DMA buffer size
   using msg_t = std::array<char, kMsgLen>;     //!< message type alias
