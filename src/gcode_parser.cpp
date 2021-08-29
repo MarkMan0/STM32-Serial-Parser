@@ -12,7 +12,6 @@
  *
  */
 
-constexpr osThreadAttr_t GcodeParser::kGcodeTaskAttr_;
 
 void GcodeParser::gcode_task(void* arg) {
   while (1) {
@@ -32,7 +31,7 @@ void GcodeParser::gcode_task(void* arg) {
 }
 
 void GcodeParser::begin() {
-  gcode_task_handle_ = osThreadNew(GcodeParser::gcode_task, NULL, &GcodeParser::kGcodeTaskAttr_);
+  gcode_task_handle_ = osThreadNew(GcodeParser::gcode_task, NULL, &kGcodeTaskAttr_);
 }
 
 void GcodeParser::parse_and_call(const char* arr) {

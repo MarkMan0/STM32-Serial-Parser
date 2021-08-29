@@ -11,7 +11,6 @@
 
 // Static members
 const Uart::msg_t Uart::kEmptyMsg{ 0 };
-constexpr osThreadAttr_t Uart::kUartSendTaskAttr;
 
 void Uart::uart_transmit_task(void* arg) {
   while (true) {

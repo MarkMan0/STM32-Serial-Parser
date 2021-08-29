@@ -12,6 +12,7 @@
 #include "parser.h"
 #include "FreeRTOS.h"
 #include "cmsis_os.h"
+#include "utils.h"
 
 /**
  * @brief Class to call gcodes parsed from null terminated string
@@ -50,15 +51,7 @@ public:
 private:
   Parser parser_;                  /*!< Parser */
   osThreadId_t gcode_task_handle_; /*!< gcode task handle*/
-  static constexpr osThreadAttr_t kGcodeTaskAttr_ = { .name = "gcode_task",
-                                                      .attr_bits = 0,
-                                                      .cb_mem = nullptr,
-                                                      .cb_size = 0,
-                                                      .stack_mem = nullptr,
-                                                      .stack_size = 128 * 4,
-                                                      .priority = (osPriority_t)osPriorityNormal,
-                                                      .tz_module = 0,
-                                                      .reserved = 0 }; /*!< gcode task attributes*/
+  const osThreadAttr_t kGcodeTaskAttr_ = utils::create_thread_attr("gcode_task", 128*4, osPriorityNormal);
 
   /**
    * @brief The gcode task, which calls gcodes

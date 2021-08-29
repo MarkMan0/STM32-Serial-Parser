@@ -14,15 +14,8 @@
 
 
 osThreadId_t periodic_send_task_handle;
-const osThreadAttr_t periodic_send_attr = { .name = "periodic_send_task",
-                                            .attr_bits = 0,
-                                            .cb_mem = nullptr,
-                                            .cb_size = 0,
-                                            .stack_mem = nullptr,
-                                            .stack_size = 128 * 4,
-                                            .priority = (osPriority_t)osPriorityBelowNormal1,
-                                            .tz_module = 0,
-                                            .reserved = 0 };  //!< send task attributes
+const osThreadAttr_t periodic_send_attr =
+    utils::create_thread_attr("periodic_send", 128 * 4, osPriorityBelowNormal2);  //!< send task attributes
 
 void periodic_send_task(void* arg) {
   constexpr size_t buff_sz{ 30 };
@@ -36,26 +29,17 @@ void periodic_send_task(void* arg) {
     }
     sniprintf(buff, buff_sz - 1, "%d", static_cast<int>(100 * adc1.read_volt()));
     uart2.send_queue(buff);
-    osDelay(pdMS_TO_TICKS(100));
+    osDelay(pdMS_TO_TICKS(2000));
   }
 }
 
 
 osThreadId_t toggle_task_handle;
-const osThreadAttr_t toggle_task_attr = { .name = "toggle_task",
-                                          .attr_bits = 0,
-                                          .cb_mem = nullptr,
-                                          .cb_size = 0,
-                                          .stack_mem = nullptr,
-                                          .stack_size = 128 * 4,
-                                          .priority = (osPriority_t)osPriorityBelowNormal1,
-                                          .tz_module = 0,
-                                          .reserved = 0 };
-
+const osThreadAttr_t toggle_task_attr = utils::create_thread_attr("toggle", 128 * 4, osPriorityBelowNormal1);
 void toggle_task(void* arg) {
   while (1) {
-    pins::A1.toggle();
-    osDelay(pdMS_TO_TICKS(2000));
+    pins::led.toggle();
+    vTaskDelay(1000);
   }
 }
 

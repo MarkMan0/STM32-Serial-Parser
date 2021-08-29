@@ -12,6 +12,7 @@
 #include "FreeRTOS.h"
 #include "cmsis_os.h"
 #include "semphr.h"
+#include "utils.h"
 
 /**
  * @brief Encapsulates UART2
@@ -238,15 +239,7 @@ private:
   std::array<uint8_t, kDmaRxBuffSize> dma_rx_buff_;  //!< DMA buffer
   SemaphoreHandle_t rx_semaphore_, tx_semaphore_;    //!< RTOS semaphores
   osThreadId_t uart_send_task_handle_;               //!< RTOS handle to task
-  static constexpr osThreadAttr_t kUartSendTaskAttr = { .name = "uart_send_task",
-                                                        .attr_bits = 0,
-                                                        .cb_mem = nullptr,
-                                                        .cb_size = 0,
-                                                        .stack_mem = nullptr,
-                                                        .stack_size = 128 * 4,
-                                                        .priority = (osPriority_t)osPriorityNormal,
-                                                        .tz_module = 0,
-                                                        .reserved = 0 };  //!< send task attributes
+  const osThreadAttr_t kUartSendTaskAttr{utils::create_thread_attr("uart_send", 128*4, osPriorityNormal1)};
 
   /**
    * @brief Task to transmit from ringBuffer

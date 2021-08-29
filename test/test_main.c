@@ -10,6 +10,7 @@
 
 #include "test_ring_buffer.h"
 #include "test_parser.h"
+#include "test_min_max.h"
 
 void setUp(void) {
 }
@@ -23,6 +24,7 @@ int main() {
   UNITY_BEGIN();
   RUN_TEST(test_ring_buffer);
   RUN_TEST(test_parser);
+  RUN_TEST(test_min_max);
   UNITY_END();
 
   while (1) {
