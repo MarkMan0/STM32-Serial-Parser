@@ -1,6 +1,12 @@
 #ifndef UTILS_H_
 #define UTILS_H_
 
+/**
+ * @file utils.h
+ * @brief Inline utility functions
+ *
+ */
+
 #include "main.h"
 #include <stm32f3xx_hal.h>
 
@@ -62,6 +68,38 @@ namespace utils {
   template <class L, class... R>
   inline constexpr auto min(const L l, const R... r) -> auto {
     return min(l, min(r...));
+  }
+
+  /**
+   * @brief Checks if val falls in \p range [ \p low, \p high], including \p low and \p high
+   *
+   * @tparam T
+   * @tparam K
+   * @tparam L
+   * @param val
+   * @param low
+   * @param high
+   * @return bool
+   */
+  template<class T, class K, class L>
+  inline constexpr bool isWithin(T val, K low, L high) {
+    return (val >= low) && (val <= high);
+  }
+
+  /**
+   * @brief Check if \p val is BETWEEN \p low and \p high , not including \p low and \p high
+   *
+   * @tparam T
+   * @tparam K
+   * @tparam L
+   * @param val
+   * @param low
+   * @param high
+   * @return bool
+   */
+  template<class T, class K, class L>
+  inline constexpr bool isWithinStrict(T val, K low, L high) {
+    return (val > low) && (val < high);
   }
 
   /**
