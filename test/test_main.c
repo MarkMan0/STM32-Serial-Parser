@@ -10,7 +10,7 @@
 
 #include "test_ring_buffer.h"
 #include "test_parser.h"
-#include "test_min_max.h"
+#include "test_utils.h"
 
 void setUp(void) {
 }

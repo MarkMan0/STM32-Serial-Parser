@@ -1,5 +1,5 @@
-#ifndef TEST_MIN_MAX_H_
-#define TEST_MIN_MAX_H_
+#ifndef TEST_UTILS_H_
+#define TEST_UTILS_H_
 
 #ifdef __cplusplus
 extern "C" {

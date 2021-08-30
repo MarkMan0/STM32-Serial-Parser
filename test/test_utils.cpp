@@ -1,4 +1,4 @@
-#include "test_min_max.h"
+#include "test_utils.h"
 #include "unity.h"
 #include "../include/utils.h"
 
