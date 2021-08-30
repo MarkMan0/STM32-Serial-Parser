@@ -208,15 +208,15 @@ Uart::msg_t* Uart::get_next_free_or_yield(uint32_t timeout) {
 bool Uart::send_queue(const char* buff, size_t num, bool from_isr) {
   if (num > kMsgLen || num == 0) return false;
 
-  msg_t* buff_ptr{nullptr};
+  msg_t* buff_ptr{ nullptr };
 
-  if(from_isr) {
+  if (from_isr) {
     buff_ptr = tx_buff_.get_next_free();
   } else {
     buff_ptr = get_next_free_or_yield(5);
   }
 
-  if(!buff_ptr) {
+  if (!buff_ptr) {
     return false;
   }
 

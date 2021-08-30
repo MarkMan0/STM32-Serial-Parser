@@ -4,9 +4,8 @@
 
 
 void test_min_max() {
-
-  constexpr int i1{1}, i2{2}, i3{3};
-  constexpr float f0{0}, f1{1}, f2{2}, f10{10};
+  constexpr int i1{ 1 }, i2{ 2 }, i3{ 3 };
+  constexpr float f0{ 0 }, f1{ 1 }, f2{ 2 }, f10{ 10 };
 
   using namespace utils;
 
@@ -23,8 +22,6 @@ void test_min_max() {
 
   constexpr auto max3 = max(f0, f2, f10, f0);
   TEST_ASSERT_EQUAL_FLOAT(f10, max3);
-
-
 }
 
 
@@ -37,7 +34,7 @@ void test_is_within() {
   TEST_ASSERT_TRUE(is_within(high, low, high));
   TEST_ASSERT_FALSE(is_within(low - 1, low, high));
   TEST_ASSERT_FALSE(is_within(high + 1, low, high));
-  TEST_ASSERT_TRUE(is_within( (high + low) * 0.5f, low, high));
+  TEST_ASSERT_TRUE(is_within((high + low) * 0.5f, low, high));
 
   using utils::is_within_strict;
 
@@ -45,5 +42,5 @@ void test_is_within() {
   TEST_ASSERT_FALSE(is_within_strict(high, low, high));
   TEST_ASSERT_FALSE(is_within_strict(low - 1, low, high));
   TEST_ASSERT_FALSE(is_within_strict(high + 1, low, high));
-  TEST_ASSERT_TRUE(is_within_strict( (high + low) * 0.5f, low, high));
+  TEST_ASSERT_TRUE(is_within_strict((high + low) * 0.5f, low, high));
 }

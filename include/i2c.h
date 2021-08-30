@@ -21,7 +21,6 @@ public:
    *
    */
   void init_peripheral();
-
 };
 
 extern I2C i2c;
