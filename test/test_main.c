@@ -25,6 +25,7 @@ int main() {
   RUN_TEST(test_ring_buffer);
   RUN_TEST(test_parser);
   RUN_TEST(test_min_max);
+  RUN_TEST(test_is_within);
   UNITY_END();
 
   while (1) {

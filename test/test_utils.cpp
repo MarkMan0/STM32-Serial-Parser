@@ -26,3 +26,24 @@ void test_min_max() {
 
 
 }
+
+
+void test_is_within() {
+  using utils::is_within;
+
+  constexpr int low = 1, high = 5;
+
+  TEST_ASSERT_TRUE(is_within(low, low, high));
+  TEST_ASSERT_TRUE(is_within(high, low, high));
+  TEST_ASSERT_FALSE(is_within(low - 1, low, high));
+  TEST_ASSERT_FALSE(is_within(high + 1, low, high));
+  TEST_ASSERT_TRUE(is_within( (high + low) * 0.5f, low, high));
+
+  using utils::is_within_strict;
+
+  TEST_ASSERT_FALSE(is_within_strict(low, low, high));
+  TEST_ASSERT_FALSE(is_within_strict(high, low, high));
+  TEST_ASSERT_FALSE(is_within_strict(low - 1, low, high));
+  TEST_ASSERT_FALSE(is_within_strict(high + 1, low, high));
+  TEST_ASSERT_TRUE(is_within_strict( (high + low) * 0.5f, low, high));
+}
