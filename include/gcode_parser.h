@@ -46,12 +46,13 @@ public:
   ///@{
   void A0(); /*!< Turns off LED*/
   void A1(); /*!< Turns on LED*/
+  void A2(); /*!< Sets the RTC time*/
   ///@}
 
 private:
   Parser parser_;                  /*!< Parser */
   osThreadId_t gcode_task_handle_; /*!< gcode task handle*/
-  const osThreadAttr_t kGcodeTaskAttr_ = utils::create_thread_attr("gcode_task", 128*4, osPriorityAboveNormal7);
+  const osThreadAttr_t kGcodeTaskAttr_ = utils::create_thread_attr("gcode_task", 128 * 4, osPriorityAboveNormal7);
 
   /**
    * @brief The gcode task, which calls gcodes

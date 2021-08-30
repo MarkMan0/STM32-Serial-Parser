@@ -11,6 +11,23 @@
 #include "semphr.h"
 #include "utils.h"
 #include "adc.h"
+#include "i2c.h"
+
+#include "DS3231/DS3231.h"
+
+
+osThreadId_t i2c_task_handle;
+const osThreadAttr_t i2c_task_attr = utils::create_thread_attr("i2c", 128 * 4, osPriorityBelowNormal1);
+
+DS3231 ds;
+void i2c_task(void* arg) {
+  while (1) {
+    DS3231::time t;
+    ds.get_time(t);
+    ds.report_time(t);
+    osDelay(pdMS_TO_TICKS(2000));
+  }
+}
 
 
 osThreadId_t periodic_send_task_handle;
@@ -67,6 +84,7 @@ int main() {
   gcode.begin();
 
   periodic_send_task_handle = osThreadNew(periodic_send_task, NULL, &periodic_send_attr);
+  i2c_task_handle = osThreadNew(i2c_task, NULL, &i2c_task_attr);
   toggle_task_handle = osThreadNew(toggle_task, NULL, &toggle_task_attr);
 
   osKernelStart();
