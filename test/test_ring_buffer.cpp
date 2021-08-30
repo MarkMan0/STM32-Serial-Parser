@@ -64,6 +64,26 @@ void test_ring_buffer() {
   }
 
   TEST_ASSERT_TRUE_MESSAGE(buff.is_empty(), "Buffer is empty after popping");
+
+
+  // concurrent get_next_free()
+  buff.reset();
+  auto ptr1 = buff.get_next_free();
+  auto ptr2 = buff.get_next_free();
+  TEST_ASSERT_FALSE(ptr1 == ptr2);
+
+  *ptr1 = 100;
+  *ptr2 = 200;
+
+  buff.push();
+  buff.push();
+  auto val1 = *(buff.get_next_occupied());
+  buff.pop();
+  auto val2 = *(buff.get_next_occupied());
+  buff.pop();
+
+  TEST_ASSERT_EQUAL(100, val1);
+  TEST_ASSERT_EQUAL(200, val2);
 }
 
 
