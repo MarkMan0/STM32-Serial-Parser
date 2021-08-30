@@ -82,7 +82,7 @@ namespace utils {
    * @return bool
    */
   template<class T, class K, class L>
-  inline constexpr bool isWithin(T val, K low, L high) {
+  inline constexpr bool is_within(T val, K low, L high) {
     return (val >= low) && (val <= high);
   }
 
@@ -98,7 +98,7 @@ namespace utils {
    * @return bool
    */
   template<class T, class K, class L>
-  inline constexpr bool isWithinStrict(T val, K low, L high) {
+  inline constexpr bool is_within_strict(T val, K low, L high) {
     return (val > low) && (val < high);
   }
 

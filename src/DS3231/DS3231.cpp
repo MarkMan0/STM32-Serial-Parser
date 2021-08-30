@@ -152,16 +152,16 @@ bool DS3231::set_time(time& t) {
 
   buff[0] = SECONDS;
 
-  using utils::isWithin;
+  using utils::is_within;
 
-  if (!isWithin(t.seconds, 0, 59)) t.seconds = valid_time.seconds;
-  if (!isWithin(t.minutes, 0, 59)) t.minutes = valid_time.minutes;
-  if (!isWithin(t.hours, 0, 23)) t.hours = valid_time.hours;
-  if (!isWithin(t.day, 1, 7)) t.day = valid_time.day;
-  if (!isWithin(t.date, 1, 31)) t.date = valid_time.date;
-  if (!isWithin(t.month, 1, 12)) t.month = valid_time.month;
-  if (!isWithin(t.am_pm, AM_PM_UNUSED, AM_PM::PM)) t.am_pm = valid_time.am_pm;
-  if (!isWithin(t.year, 2000, 2099)) t.year = valid_time.year;
+  if (!is_within(t.seconds, 0, 59)) t.seconds = valid_time.seconds;
+  if (!is_within(t.minutes, 0, 59)) t.minutes = valid_time.minutes;
+  if (!is_within(t.hours, 0, 23)) t.hours = valid_time.hours;
+  if (!is_within(t.day, 1, 7)) t.day = valid_time.day;
+  if (!is_within(t.date, 1, 31)) t.date = valid_time.date;
+  if (!is_within(t.month, 1, 12)) t.month = valid_time.month;
+  if (!is_within(t.am_pm, AM_PM_UNUSED, AM_PM::PM)) t.am_pm = valid_time.am_pm;
+  if (!is_within(t.year, 2000, 2099)) t.year = valid_time.year;
 
 
   buff[1] = ((t.seconds / 10) << 4) | ((t.seconds % 10) & MASK_SECONDS);
@@ -215,7 +215,7 @@ void DS3231::report_time(const time& t) const {
   static constexpr const char* strs[] = {
     "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
   };
-  if (!utils::isWithin(t.day, 1, 7)) {
+  if (!utils::is_within(t.day, 1, 7)) {
     return;
   }
   len = snprintf(buff, buff_sz - 1, "DOW: %s", strs[t.day - 1]);
