@@ -31,12 +31,23 @@ void i2c_task(void* arg) {
 
 
 
-osThreadId_t toggle_task_handle;
-const osThreadAttr_t toggle_task_attr = utils::create_thread_attr("toggle", 128 * 4, osPriorityBelowNormal1);
-void toggle_task(void* arg) {
+osThreadId_t monitor_task_handle;
+const osThreadAttr_t monitor_task_attr = utils::create_thread_attr("monitor", 128 * 4, osPriorityAboveNormal1);
+void monitor_task(void* arg) {
+  const auto num_of_tasks = uxTaskGetNumberOfTasks();
+
+  auto statuses = static_cast<TaskStatus_t*>(pvPortMalloc(num_of_tasks * sizeof(TaskStatus_t)));
+  constexpr size_t buff_sz{ 30 };
+  static char buff[buff_sz];
   while (1) {
-    pins::led.toggle();
-    vTaskDelay(1000);
+    if (auto n = uxTaskGetSystemState(statuses, num_of_tasks, NULL)) {
+      for (int i = 0; i < n; ++i) {
+        snprintf(buff, buff_sz, "%s: %d", statuses[i].pcTaskName, statuses[i].usStackHighWaterMark);
+        uart2.send_queue(buff);
+      }
+    }
+
+    osDelay(2000);
   }
 }
 
@@ -64,7 +75,7 @@ int main() {
   gcode.begin();
 
   i2c_task_handle = osThreadNew(i2c_task, NULL, &i2c_task_attr);
-  toggle_task_handle = osThreadNew(toggle_task, NULL, &toggle_task_attr);
+  monitor_task_handle = osThreadNew(monitor_task, NULL, &monitor_task_attr);
 
   osKernelStart();
 }
