@@ -197,7 +197,6 @@ Uart::msg_t* Uart::get_next_free_or_yield(uint32_t timeout) {
 
     if (ptr == nullptr && HAL_GetTick() - start < timeout) {
       taskYIELD();
-      exit = true;
     } else {
       exit = true;
     }
