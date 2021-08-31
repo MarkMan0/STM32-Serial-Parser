@@ -13,6 +13,8 @@
 #include "cmsis_os.h"
 #include "semphr.h"
 #include "utils.h"
+#include "string.h"
+#include <type_traits>
 
 /**
  * @brief Encapsulates UART2
@@ -65,9 +67,28 @@ public:
    * @param from_isr set to true if function is called from ISR
    * @return true on success
    */
-  template <size_t N>
-  bool send_queue(const char (&arr)[N], bool from_isr = false) {
-    return send_queue(arr, N, from_isr);
+  template <size_t N, class T>
+  bool send_queue(const char (&arr)[N], T from_isr = false) {
+    if constexpr (std::is_same<T, bool>::value) {
+      return send_queue(arr, N, from_isr);
+    } else {
+      /*
+       * In case when this is called like this:
+       * char foo[30];
+       * ....
+       * send_queue(foo, 15);  // want to send 15 chars
+       * the template will be:
+       * send_queue(const char &arr[30], 15)
+       * and 15 will be converted to bool
+       * so this is called: send_queue(arr, 30, true)
+       * Which is not what the user wanted
+       * The if constexpr solves this issue, from_isr is false.
+       *
+       * If the user would have give from_isr like this: send_queue(foo, 15, true/false)
+       * the send_queue(const char*, size_t, bool) would be called
+       */
+      return send_queue(arr, strnlen(arr, N), false);
+    }
   }
 
   /**

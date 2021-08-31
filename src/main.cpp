@@ -30,26 +30,6 @@ void i2c_task(void* arg) {
 }
 
 
-osThreadId_t periodic_send_task_handle;
-const osThreadAttr_t periodic_send_attr =
-    utils::create_thread_attr("periodic_send", 128 * 4, osPriorityBelowNormal2);  //!< send task attributes
-
-void periodic_send_task(void* arg) {
-  constexpr size_t buff_sz{ 30 };
-  char buff[buff_sz];
-  while (1) {
-    adc1.stop_adc();
-    pins::A0.config_channel();
-    adc1.start_adc();
-    while (HAL_ADC_PollForConversion(&adc1.hadc1_, 1) == HAL_TIMEOUT) {
-      osDelay(pdMS_TO_TICKS(5));
-    }
-    sniprintf(buff, buff_sz - 1, "%d", static_cast<int>(100 * adc1.read_volt()));
-    uart2.send_queue(buff);
-    osDelay(pdMS_TO_TICKS(2000));
-  }
-}
-
 
 osThreadId_t toggle_task_handle;
 const osThreadAttr_t toggle_task_attr = utils::create_thread_attr("toggle", 128 * 4, osPriorityBelowNormal1);
@@ -83,7 +63,6 @@ int main() {
   uart2.begin();
   gcode.begin();
 
-  periodic_send_task_handle = osThreadNew(periodic_send_task, NULL, &periodic_send_attr);
   i2c_task_handle = osThreadNew(i2c_task, NULL, &i2c_task_attr);
   toggle_task_handle = osThreadNew(toggle_task, NULL, &toggle_task_attr);
 

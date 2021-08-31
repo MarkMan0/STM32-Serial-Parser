@@ -33,7 +33,7 @@ void Uart::tick() {
     auto ptr = tx_buff_.get_next_occupied();
     if (ptr == nullptr) return;
     transmit("echo: ");
-    if (transmit(ptr->data())) {
+    if (transmit(reinterpret_cast<uint8_t*>(ptr->data()), strnlen(ptr->data(), kMsgLen))) {
       transmit("\n");
       tx_buff_.pop();
     }
@@ -121,7 +121,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
   }
 
   /* Determine start position in DMA buffer based on previous CNDTR value */
-  start = (uart2.dma_state_.prevCNDTR < uart2.kDmaRxBuffSize) ? (uart2.kDmaRxBuffSize - uart2.dma_state_.prevCNDTR) : 0;
+  start = 0;
 
   if (uart2.dma_state_.flag) {
     /* Timeout event */
@@ -129,33 +129,34 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
      *  If previous CNDTR is less than DMA buffer size: there is old data in DMA buffer (from previous timeout) that has
      * to be ignored. If CNDTR == DMA buffer size: entire buffer content is new and has to be processed.
      */
-    length = (uart2.dma_state_.prevCNDTR < uart2.kDmaRxBuffSize) ? (uart2.dma_state_.prevCNDTR - currCNDTR) :
-                                                                   (uart2.kDmaRxBuffSize - currCNDTR);
-    uart2.dma_state_.prevCNDTR = currCNDTR;
+    length = uart2.kDmaRxBuffSize - currCNDTR;
     uart2.dma_state_.flag = 0;
   } else {
     /* DMA Rx Complete event */
-    length = uart2.kDmaRxBuffSize - start;
-    uart2.dma_state_.prevCNDTR = uart2.kDmaRxBuffSize;
+    length = uart2.kDmaRxBuffSize;
   }
 
   // get pointer to buffer
   auto ptr = uart2.rx_buff_.get_next_free();
 
-  if (ptr == nullptr) {
-    return;
-  }
-  /* Copy and Process new data */
-  for (i = 0, pos = start; i < length; ++i, ++pos) {
-    (*ptr)[i] = uart2.dma_rx_buff_[pos];
-  }
-  uart2.rx_buff_.push();
+  if (ptr != nullptr) {
+    /* Copy and Process new data */
+    for (i = 0, pos = start; i < length && i < uart2.kMsgLen - 1; ++i, ++pos) {
+      (*ptr)[i] = uart2.dma_rx_buff_[pos];
+    }
+    (*ptr)[i] = '\0';
+    uart2.rx_buff_.push();
 
-  /** Give rx semaphore */
-  xSemaphoreGiveFromISR(uart2.rx_semaphore_, NULL);
-  if (!uart2.rx_buff_.is_full()) {
-    uart2.send_queue("ok", true);
+    /** Give rx semaphore */
+    xSemaphoreGiveFromISR(uart2.rx_semaphore_, NULL);
+    if (!uart2.rx_buff_.is_full()) {
+      // uart2.send_queue("ok", true);
+    }
   }
+  /* Fast reset the DMA*/
+  huart->hdmarx->Instance->CCR &= ~DMA_CCR_EN;
+  huart->hdmarx->Instance->CNDTR = uart2.dma_rx_buff_.size();
+  huart->hdmarx->Instance->CCR |= DMA_CCR_EN;
 }
 
 void Uart::begin() {
@@ -206,7 +207,7 @@ Uart::msg_t* Uart::get_next_free_or_yield(uint32_t timeout) {
 }
 
 bool Uart::send_queue(const char* buff, size_t num, bool from_isr) {
-  if (num > kMsgLen || num == 0) return false;
+  if (num > (kMsgLen - 1) || num == 0) return false;
 
   msg_t* buff_ptr{ nullptr };
 
@@ -220,7 +221,7 @@ bool Uart::send_queue(const char* buff, size_t num, bool from_isr) {
     return false;
   }
 
-  memset(buff_ptr->data(), 0, buff_ptr->size());
+  (*buff_ptr)[num] = '\0';
   memcpy(buff_ptr->data(), buff, num);
   tx_buff_.push();
   /** Give TX semaphore */

@@ -13,6 +13,7 @@
  */
 
 
+
 void GcodeParser::gcode_task(void* arg) {
   while (1) {
     if (xSemaphoreTake(uart2.rx_semaphore_, portMAX_DELAY)) {
