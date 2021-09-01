@@ -28,23 +28,39 @@ void i2c_task(void* arg) {
 
 
 
-osThreadId_t monitor_task_handle;
-const osThreadAttr_t monitor_task_attr = utils::create_thread_attr("monitor", 128 * 4, osPriorityAboveNormal1);
+osThreadId_t monitor_task_handle; /*!< handle for monitor task */
+const osThreadAttr_t monitor_task_attr =
+    utils::create_thread_attr("monitor", 128 * 4, osPriorityBelowNormal4); /*!< monitor task attributes */
+/**
+ * @brief Memory consumption monitoring
+ *
+ * Monitors stack of all running tasks and heap memory
+ * IMPORTANT: start as last task, as it needs to know the number of tasks running
+ * @param arg nothing
+ */
 void monitor_task(void* arg) {
   const auto num_of_tasks = uxTaskGetNumberOfTasks();
 
   auto statuses = static_cast<TaskStatus_t*>(pvPortMalloc(num_of_tasks * sizeof(TaskStatus_t)));
   constexpr size_t buff_sz{ 30 };
   static char buff[buff_sz];
+
+  constexpr size_t memory_low_th{ 10 };
   while (1) {
     if (auto n = uxTaskGetSystemState(statuses, num_of_tasks, NULL)) {
-      for (int i = 0; i < n; ++i) {
-        snprintf(buff, buff_sz, "%s: %d", statuses[i].pcTaskName, statuses[i].usStackHighWaterMark);
-        uart2.send_queue(buff);
+      for (unsigned int i = 0; i < n; ++i) {
+        if (statuses[i].usStackHighWaterMark < memory_low_th) {
+          snprintf(buff, buff_sz, "MEM:%s:%d", statuses[i].pcTaskName, statuses[i].usStackHighWaterMark);
+          uart2.send_queue(buff);
+        }
       }
     }
 
-    osDelay(2000);
+    if (xPortGetFreeHeapSize() < memory_low_th) {
+      uart2.send_queue("HEAP LOW");
+    }
+
+    osDelay(pdMS_TO_TICKS(10000));
   }
 }
 
@@ -72,8 +88,9 @@ int main() {
   gcode.begin();
 
   i2c_task_handle = osThreadNew(i2c_task, NULL, &i2c_task_attr);
-  monitor_task_handle = osThreadNew(monitor_task, NULL, &monitor_task_attr);
 
+
+  monitor_task_handle = osThreadNew(monitor_task, NULL, &monitor_task_attr);
   osKernelStart();
 }
 
