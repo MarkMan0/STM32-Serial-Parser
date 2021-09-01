@@ -22,9 +22,6 @@ const osThreadAttr_t i2c_task_attr = utils::create_thread_attr("i2c", 128 * 4, o
 DS3231 ds;
 void i2c_task(void* arg) {
   while (1) {
-    DS3231::time t;
-    ds.get_time(t);
-    ds.report_time(t);
     osDelay(pdMS_TO_TICKS(2000));
   }
 }

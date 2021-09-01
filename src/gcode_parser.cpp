@@ -58,6 +58,9 @@ void GcodeParser::parse_A() {
     case 2:
       A2();
       break;
+    case 3:
+      A3();
+      break;
 
     default:
       break;

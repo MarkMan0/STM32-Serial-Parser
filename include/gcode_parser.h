@@ -47,6 +47,7 @@ public:
   void A0(); /*!< Turns off LED*/
   void A1(); /*!< Turns on LED*/
   void A2(); /*!< Sets the RTC time*/
+  void A3(); /*!< Report the current time*/
   ///@}
 
 private:

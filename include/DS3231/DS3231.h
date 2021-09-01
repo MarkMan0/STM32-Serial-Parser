@@ -50,11 +50,11 @@ public:
   void config();
 
   /**
-   * @brief Prints the time in a user-readable way
+   * @brief Prints the time in a user-readable way, static
    *
    * @param t time to be printed
    */
-  void report_time(const time& t) const;
+  static void report_time(const time& t);
 
   /**
    * @brief Reads all of the registers and prints it over uart

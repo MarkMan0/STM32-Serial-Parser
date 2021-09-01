@@ -204,7 +204,7 @@ bool DS3231::set_time(time& t) {
   return true;
 }
 
-void DS3231::report_time(const time& t) const {
+void DS3231::report_time(const time& t) {
   constexpr size_t buff_sz{ 30 };
   char buff[buff_sz];
 
