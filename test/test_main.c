@@ -11,6 +11,7 @@
 #include "test_ring_buffer.h"
 #include "test_parser.h"
 #include "test_utils.h"
+#include "test_rtc_i2c.h"
 
 void setUp(void) {
 }
@@ -26,6 +27,7 @@ int main() {
   RUN_TEST(test_parser);
   RUN_TEST(test_min_max);
   RUN_TEST(test_is_within);
+  RUN_TEST(test_rtc_i2c);
   UNITY_END();
 
   while (1) {
