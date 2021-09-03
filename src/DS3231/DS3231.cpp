@@ -96,7 +96,9 @@ static constexpr DS3231::time valid_time{ .seconds = 0,
 
 void DS3231::report_all_registers() {
   uint8_t buff[REGISTER_END];
-  utils::hal_wrap(HAL_I2C_Master_Receive(&i2c.hi2c1_, dev_address_, buff, REGISTER_END, 1000));
+  if (!i2c.read(dev_address_, buff, REGISTER_END)) {
+    return;
+  }
   constexpr size_t msg_len = 25;
   char msg[msg_len];
   for (uint8_t i = 0; i < REGISTER_END; ++i) {
@@ -111,15 +113,11 @@ bool DS3231::get_time(time& t) {
 
   buff[0] = SECONDS;
 
-  HAL_StatusTypeDef res{ HAL_ERROR };
 
-  res = HAL_I2C_Master_Transmit(&i2c.hi2c1_, dev_address_, buff, 1, 100);
-  if (res != HAL_OK) {
+  if (!i2c.write(dev_address_, buff, 1)) {
     return false;
   }
-
-  res = HAL_I2C_Master_Receive(&i2c.hi2c1_, dev_address_, buff, 7, 100);
-  if (res != HAL_OK) {
+  if (!i2c.read(dev_address_, buff, 7)) {
     return false;
   }
 
@@ -197,11 +195,7 @@ bool DS3231::set_time(time& t) {
   buff[7] = ((t.year - 2000) / 10) << 4;
   buff[7] |= (t.year % 10) & MASK_YEAR;
 
-  if (HAL_I2C_Master_Transmit(&i2c.hi2c1_, dev_address_, buff, 8, 100) != HAL_OK) {
-    return false;
-  }
-
-  return true;
+  return i2c.write(dev_address_, buff, 8);
 }
 
 void DS3231::report_time(const time& t) {
