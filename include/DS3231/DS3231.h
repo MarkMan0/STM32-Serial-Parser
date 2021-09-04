@@ -37,12 +37,12 @@ public:
    * @brief Reads the time from the RTC and stores it in the parameter
    *
    */
-  bool get_time(time&);
+  [[nodiscard]] bool get_time(time&);
   /**
    * @brief Sets the RTC time from the parameter
    *
    */
-  bool set_time(time&);
+  [[nodiscard]] bool set_time(time&);
   /**
    * @brief Configures the RTC
    *

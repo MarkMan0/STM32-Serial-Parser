@@ -52,5 +52,14 @@ bool I2C::read(uint8_t address, uint8_t* data, size_t len) {
   return HAL_I2C_Master_Receive(&hi2c1_, address, data, len, timeout) == HAL_OK;
 }
 
+bool I2C::write_register(uint8_t address, uint8_t reg_addr, uint8_t* data, size_t len) {
+  return HAL_I2C_Mem_Write(&hi2c1_, address, reg_addr, 1, data, len, timeout) == HAL_OK;
+}
+
+
+bool I2C::read_register(uint8_t address, uint8_t reg_addr, uint8_t* data, size_t len) {
+  return HAL_I2C_Mem_Read(&hi2c1_, address, reg_addr, 1, data, len, timeout) == HAL_OK;
+}
+
 
 I2C i2c;

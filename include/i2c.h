@@ -23,6 +23,8 @@ public:
   void init_peripheral();
   bool write(uint8_t address, uint8_t* data, size_t len);
   bool read(uint8_t address, uint8_t* data, size_t len);
+  bool write_register(uint8_t address, uint8_t reg_addr, uint8_t* data, size_t len);
+  bool read_register(uint8_t address, uint8_t reg_addr, uint8_t* data, size_t len);
 };
 
 extern I2C i2c;

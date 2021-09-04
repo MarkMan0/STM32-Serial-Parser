@@ -96,7 +96,7 @@ static constexpr DS3231::time valid_time{ .seconds = 0,
 
 void DS3231::report_all_registers() {
   uint8_t buff[REGISTER_END];
-  if (!i2c.read(dev_address_, buff, REGISTER_END)) {
+  if (!i2c.read_register(dev_address_, SECONDS, buff, REGISTER_END)) {
     return;
   }
   constexpr size_t msg_len = 25;
@@ -113,11 +113,7 @@ bool DS3231::get_time(time& t) {
 
   buff[0] = SECONDS;
 
-
-  if (!i2c.write(dev_address_, buff, 1)) {
-    return false;
-  }
-  if (!i2c.read(dev_address_, buff, 7)) {
+  if (!i2c.read_register(dev_address_, SECONDS, buff, 7)) {
     return false;
   }
 
@@ -146,56 +142,54 @@ bool DS3231::get_time(time& t) {
 
 
 bool DS3231::set_time(time& t) {
-  uint8_t buff[8];
-
-  buff[0] = SECONDS;
+  uint8_t buff[7];
 
   using utils::is_within;
 
-  if (!is_within(t.seconds, 0, 59)) t.seconds = valid_time.seconds;
-  if (!is_within(t.minutes, 0, 59)) t.minutes = valid_time.minutes;
-  if (!is_within(t.hours, 0, 23)) t.hours = valid_time.hours;
-  if (!is_within(t.day, 1, 7)) t.day = valid_time.day;
-  if (!is_within(t.date, 1, 31)) t.date = valid_time.date;
-  if (!is_within(t.month, 1, 12)) t.month = valid_time.month;
-  if (!is_within(t.am_pm, AM_PM_UNUSED, AM_PM::PM)) t.am_pm = valid_time.am_pm;
-  if (!is_within(t.year, 2000, 2099)) t.year = valid_time.year;
+  if (!is_within(t.seconds, 0, 59)) return false;
+  if (!is_within(t.minutes, 0, 59)) return false;
+  if (!is_within(t.hours, 0, 23)) return false;
+  if (!is_within(t.day, 1, 7)) return false;
+  if (!is_within(t.date, 1, 31)) return false;
+  if (!is_within(t.month, 1, 12)) return false;
+  if (!is_within(t.am_pm, AM_PM_UNUSED, AM_PM::PM)) return false;
+  if (!is_within(t.year, 2000, 2099)) return false;
 
 
-  buff[1] = ((t.seconds / 10) << 4) | ((t.seconds % 10) & MASK_SECONDS);
-  buff[2] = ((t.minutes / 10) << 4) | ((t.minutes % 10) & MASK_MINUTES);
+  buff[0] = ((t.seconds / 10) << 4) | ((t.seconds % 10) & MASK_SECONDS);
+  buff[1] = ((t.minutes / 10) << 4) | ((t.minutes % 10) & MASK_MINUTES);
 
-  buff[3] = 0;
+  buff[2] = 0;
   if (t.am_pm == AM_PM::AM_PM_UNUSED) {
     if (t.hours >= 20) {
-      buff[3] |= MASK_AM_PM_20_HOUR;
+      buff[2] |= MASK_AM_PM_20_HOUR;
     }
   } else {
-    buff[3] |= MASK_12_24;
+    buff[2] |= MASK_12_24;
     if (t.am_pm == AM_PM::PM) {
-      buff[3] |= MASK_AM_PM_20_HOUR;
+      buff[2] |= MASK_AM_PM_20_HOUR;
     }
   }
   if (t.hours >= 10 && t.hours < 20) {
-    buff[3] |= MASK_10_HOUR;
+    buff[2] |= MASK_10_HOUR;
   }
-  buff[3] |= (t.hours % 10) & MASK_HOURS;
+  buff[2] |= (t.hours % 10) & MASK_HOURS;
 
-  buff[4] = t.day & MASK_DAY;
-
-
-  buff[5] = ((t.date / 10) << 4) | ((t.date % 10) & MASK_DATE);
+  buff[3] = t.day & MASK_DAY;
 
 
-  buff[6] = (t.month % 10) & MASK_MONTH;
+  buff[4] = ((t.date / 10) << 4) | ((t.date % 10) & MASK_DATE);
+
+
+  buff[5] = (t.month % 10) & MASK_MONTH;
   if (t.month >= 10) {
-    buff[6] |= MASK_10_MONTH;
+    buff[5] |= MASK_10_MONTH;
   }
 
-  buff[7] = ((t.year - 2000) / 10) << 4;
-  buff[7] |= (t.year % 10) & MASK_YEAR;
+  buff[6] = ((t.year - 2000) / 10) << 4;
+  buff[6] |= (t.year % 10) & MASK_YEAR;
 
-  return i2c.write(dev_address_, buff, 8);
+  return i2c.write_register(dev_address_, SECONDS, buff, 7);
 }
 
 void DS3231::report_time(const time& t) {

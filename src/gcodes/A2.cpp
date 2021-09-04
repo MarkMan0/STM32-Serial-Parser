@@ -20,7 +20,10 @@
 void GcodeParser::A2() {
   DS3231::time t{ 0 };
 
-  rtc.get_time(t);
+  if (!rtc.get_time(t)) {
+    uart2.send_queue("Couldn't get time");
+    return;
+  }
 
   t.am_pm = DS3231::AM_PM_UNUSED;
   int16_t dest{ 0 };
