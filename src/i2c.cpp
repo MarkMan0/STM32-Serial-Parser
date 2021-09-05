@@ -42,7 +42,7 @@ void I2C::init_peripheral() {
   utils::hal_wrap(HAL_I2CEx_ConfigDigitalFilter(&hi2c1_, 0x00));
 };
 
-static constexpr uint32_t timeout = 100;
+static constexpr uint32_t timeout = 1000;
 
 bool I2C::write(uint8_t address, uint8_t* data, size_t len) {
   return HAL_I2C_Master_Transmit(&hi2c1_, address, data, len, timeout) == HAL_OK;
