@@ -12,17 +12,42 @@
 #include "utils.h"
 #include "adc.h"
 #include "i2c.h"
+#include "SSD1306/SSD1306.h"
 
 #include "DS3231/DS3231.h"
+#include "GFX.h"
 
 
-osThreadId_t i2c_task_handle;
-const osThreadAttr_t i2c_task_attr = utils::create_thread_attr("i2c", 128 * 4, osPriorityBelowNormal1);
+osThreadId_t display_task_handle; /*!< Display task handle */
+const osThreadAttr_t display_task_attr =
+    utils::create_thread_attr("display", 128 * 4, osPriorityBelowNormal1); /*!< Display task attributes*/
 
-DS3231 ds;
-void i2c_task(void* arg) {
+static SSD1306 oled_display;
+static GFX graphics;
+
+/**
+ * @brief Transfers the canvas to the display with a set rate
+ *
+ * @param arg
+ */
+void display_task(void* arg) {
+  if (!oled_display.begin()) {
+    while (1) {
+      osDelay(portMAX_DELAY);
+    }
+  }
+  graphics.draw_fcn_ = SSD1306::draw_canvas;
+  uint8_t col{ 0 };
   while (1) {
-    osDelay(pdMS_TO_TICKS(2000));
+    for (int i = 0; i < 64; ++i) {
+      graphics.toggle_pixel({ col, i });
+    }
+    col += 1;
+    if (col == 128) {
+      col = 0;
+    }
+    graphics.draw();
+    osDelay(pdMS_TO_TICKS(1000));
   }
 }
 
@@ -90,8 +115,7 @@ int main() {
   uart2.begin();
   gcode.begin();
 
-  i2c_task_handle = osThreadNew(i2c_task, NULL, &i2c_task_attr);
-
+  display_task_handle = osThreadNew(display_task, NULL, &display_task_attr);
 
   monitor_task_handle = osThreadNew(monitor_task, NULL, &monitor_task_attr);
   osKernelStart();

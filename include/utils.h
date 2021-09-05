@@ -123,6 +123,26 @@ namespace utils {
     return attr;
   }
 
+  /**
+   * @brief Simple point with 2 coordinates
+   *
+   * @tparam T
+   */
+  template <class T>
+  class Point {
+  public:
+    using data_t = T;
+    data_t x_{ 0 };
+    data_t y_{ 0 };
+
+    Point() = default;
+    Point(data_t x, data_t y) : x_{ x }, y_{ y } {
+    }
+    Point(const Point& other) = default;
+    Point& operator=(const Point& lhs) = default;
+  };
+
+
 }  // namespace utils
 
 #endif
