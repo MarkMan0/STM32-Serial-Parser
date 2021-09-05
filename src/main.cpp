@@ -54,10 +54,13 @@ void monitor_task(void* arg) {
           uart2.send_queue(buff);
         }
       }
+    } else {
+      uart2.send_queue("Couldn't get system state");
     }
 
     if (xPortGetFreeHeapSize() < memory_low_th) {
-      uart2.send_queue("HEAP LOW");
+      snprintf(buff, buff_sz - 1, "HEAP:%d", static_cast<int>(xPortGetFreeHeapSize()));
+      uart2.send_queue(buff);
     }
 
     osDelay(pdMS_TO_TICKS(10000));
