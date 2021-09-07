@@ -67,25 +67,21 @@ void monitor_task(void* arg) {
   const auto num_of_tasks = uxTaskGetNumberOfTasks();
 
   auto statuses = static_cast<TaskStatus_t*>(pvPortMalloc(num_of_tasks * sizeof(TaskStatus_t)));
-  constexpr size_t buff_sz{ 30 };
-  static char buff[buff_sz];
 
   constexpr size_t memory_low_th{ 10 };
   while (1) {
     if (auto n = uxTaskGetSystemState(statuses, num_of_tasks, NULL)) {
       for (unsigned int i = 0; i < n; ++i) {
         if (statuses[i].usStackHighWaterMark < memory_low_th) {
-          snprintf(buff, buff_sz, "MEM:%s:%d", statuses[i].pcTaskName, statuses[i].usStackHighWaterMark);
-          uart2.send_queue(buff);
+          uart2.printf("MEM:%s:%d", statuses[i].pcTaskName, statuses[i].usStackHighWaterMark);
         }
       }
     } else {
-      uart2.send_queue("Couldn't get system state");
+      uart2.printf("Couldn't get system state");
     }
 
     if (xPortGetFreeHeapSize() < memory_low_th) {
-      snprintf(buff, buff_sz - 1, "HEAP:%d", static_cast<int>(xPortGetFreeHeapSize()));
-      uart2.send_queue(buff);
+      uart2.printf("HEAP:%d", static_cast<int>(xPortGetFreeHeapSize()));
     }
 
     osDelay(pdMS_TO_TICKS(10000));

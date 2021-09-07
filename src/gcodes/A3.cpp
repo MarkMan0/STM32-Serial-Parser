@@ -9,6 +9,6 @@ void GcodeParser::A3() {
   if (rtc.get_time(t)) {
     DS3231::report_time(t);
   } else {
-    uart2.send_queue("Failed to get time");
+    uart2.printf("Failed to get time");
   }
 }

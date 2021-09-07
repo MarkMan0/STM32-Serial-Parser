@@ -99,11 +99,8 @@ void DS3231::report_all_registers() {
   if (!i2c.read_register(dev_address_, SECONDS, buff, REGISTER_END)) {
     return;
   }
-  constexpr size_t msg_len = 25;
-  char msg[msg_len];
   for (uint8_t i = 0; i < REGISTER_END; ++i) {
-    snprintf(msg, msg_len - 1, "buff %d, val: %d", i, buff[i]);
-    uart2.send_queue(msg);
+    uart2.printf("buff %d, val: %d", i, buff[i]);
   }
 }
 
@@ -193,12 +190,8 @@ bool DS3231::set_time(time& t) {
 }
 
 void DS3231::report_time(const time& t) {
-  constexpr size_t buff_sz{ 30 };
-  char buff[buff_sz];
 
-  auto len =
-      snprintf(buff, buff_sz - 1, "%2d.%2d.%4d %2d:%2d:%2d", t.date, t.month, t.year, t.hours, t.minutes, t.seconds);
-  uart2.send_queue(buff, len);
+  uart2.printf("%2d.%2d.%4d %2d:%2d:%2d", t.date, t.month, t.year, t.hours, t.minutes, t.seconds);
 
   static constexpr const char* strs[] = {
     "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
@@ -206,8 +199,7 @@ void DS3231::report_time(const time& t) {
   if (!utils::is_within(t.day, 1, 7)) {
     return;
   }
-  len = snprintf(buff, buff_sz - 1, "DOW: %s", strs[t.day - 1]);
-  uart2.send_queue(buff, len);
+  uart2.printf("DOW: %s", strs[t.day - 1]);
 }
 
 

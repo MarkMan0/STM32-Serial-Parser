@@ -24,7 +24,7 @@ void GcodeParser::gcode_task(void* arg) {
         uart2.send_queue(msg.data());
         uart2.pop_rx();
         if (need_ok) {
-          uart2.send_queue("ok");
+          uart2.printf("ok");
         }
       }
     }

@@ -21,7 +21,7 @@ void GcodeParser::A2() {
   DS3231::time t{ 0 };
 
   if (!rtc.get_time(t)) {
-    uart2.send_queue("Couldn't get time");
+    uart2.printf("Couldn't get time");
     return;
   }
 
@@ -51,8 +51,8 @@ void GcodeParser::A2() {
   }
 
   if (rtc.set_time(t)) {
-    uart2.send_queue("Time set!");
+    uart2.printf("Time set!");
   } else {
-    uart2.send_queue("Time set failed!");
+    uart2.printf("Time set failed!");
   }
 }
