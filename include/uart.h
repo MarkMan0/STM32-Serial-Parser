@@ -304,26 +304,7 @@ private:
    * @param args args obtained by va_start()
    * @return true on success
    */
-  bool vprintf(bool from_isr, const char* fmt, va_list args) {
-    msg_t* buff_ptr{ nullptr };
-
-    if (from_isr) {
-      buff_ptr = tx_buff_.get_next_free();
-    } else {
-      buff_ptr = get_next_free_or_yield(5);
-    }
-
-    if (!buff_ptr) {
-      return false;
-    }
-
-    vsnprintf(buff_ptr->data(), buff_ptr->size() - 1, fmt, args);
-
-    tx_buff_.push();
-    /** Give TX semaphore */
-    xSemaphoreGiveFromISR(tx_semaphore_, NULL);
-    return true;
-  }
+  bool vprintf(bool from_isr, const char* fmt, va_list args);
 
   /**
    * @brief Get the next free in buffer, block and yield if can't

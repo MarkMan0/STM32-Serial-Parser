@@ -150,7 +150,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
     /** Give rx semaphore */
     xSemaphoreGiveFromISR(uart2.rx_semaphore_, NULL);
     if (!uart2.rx_buff_.is_full()) {
-      // uart2.send_queue("ok", true);
+      uart2.printf_isr("ok");
     }
   }
   /* Fast reset the DMA*/
@@ -224,7 +224,37 @@ bool Uart::send_queue(const char* buff, size_t num, bool from_isr) {
   memcpy(buff_ptr->data(), buff, num);
   tx_buff_.push();
   /** Give TX semaphore */
-  xSemaphoreGiveFromISR(tx_semaphore_, NULL);
+  if (from_isr) {
+    xSemaphoreGiveFromISR(tx_semaphore_, NULL);
+  } else {
+    xSemaphoreGive(tx_semaphore_);
+  }
+  return true;
+}
+
+
+bool Uart::vprintf(bool from_isr, const char* fmt, va_list args) {
+  msg_t* buff_ptr{ nullptr };
+
+  if (from_isr) {
+    buff_ptr = tx_buff_.get_next_free();
+  } else {
+    buff_ptr = get_next_free_or_yield(5);
+  }
+
+  if (!buff_ptr) {
+    return false;
+  }
+
+  vsnprintf(buff_ptr->data(), buff_ptr->size() - 1, fmt, args);
+
+  tx_buff_.push();
+  /** Give TX semaphore */
+  if (from_isr) {
+    xSemaphoreGiveFromISR(tx_semaphore_, NULL);
+  } else {
+    xSemaphoreGive(tx_semaphore_);
+  }
   return true;
 }
 
