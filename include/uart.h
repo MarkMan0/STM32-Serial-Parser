@@ -15,6 +15,7 @@
 #include "utils.h"
 #include "string.h"
 #include <type_traits>
+#include <cstdarg>
 
 /**
  * @brief Encapsulates UART2
@@ -213,6 +214,39 @@ public:
   bool transmit_DMA(const char* data) {
     return transmit_DMA(reinterpret_cast<uint8_t*>(const_cast<char*>(data)), strlen(data));
   }
+
+  /**
+   * @brief Print formatted data using queue
+   * @details Use in ISR, will not yield and wait if the buffer is full
+   * @see send_queue
+   * @param fmt printf-style format
+   * @param ... data
+   * @return true on success
+   */
+  bool printf_isr(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    const auto res = vprintf(true, fmt, args);
+    va_end(args);
+    return res;
+  }
+
+  /**
+   * @brief Print formatted data using queue
+   * @details Will yield to OS if the buffer is full
+   * @see send_queue
+   * @param fmt printf-style format
+   * @param ... data
+   * @return true on success
+   */
+  bool printf(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    const auto res = vprintf(false, fmt, args);
+    va_end(args);
+    return res;
+  }
+
   /**
    * @brief Called on UART IDLE interrupt, starts countdown
    *
@@ -261,6 +295,35 @@ private:
   SemaphoreHandle_t rx_semaphore_, tx_semaphore_;    //!< RTOS semaphores
   osThreadId_t uart_send_task_handle_;               //!< RTOS handle to task
   const osThreadAttr_t kUartSendTaskAttr{ utils::create_thread_attr("uart_send", 128 * 4, osPriorityAboveNormal7) };
+
+  /**
+   * @brief Wrapper for vsnprintf, prints directly into the buffer
+   *
+   * @param from_isr when true, will not yield if buffer is full
+   * @param fmt format
+   * @param args args obtained by va_start()
+   * @return true on success
+   */
+  bool vprintf(bool from_isr, const char* fmt, va_list args) {
+    msg_t* buff_ptr{ nullptr };
+
+    if (from_isr) {
+      buff_ptr = tx_buff_.get_next_free();
+    } else {
+      buff_ptr = get_next_free_or_yield(5);
+    }
+
+    if (!buff_ptr) {
+      return false;
+    }
+
+    vsnprintf(buff_ptr->data(), buff_ptr->size() - 1, fmt, args);
+
+    tx_buff_.push();
+    /** Give TX semaphore */
+    xSemaphoreGiveFromISR(tx_semaphore_, NULL);
+    return true;
+  }
 
   /**
    * @brief Get the next free in buffer, block and yield if can't
