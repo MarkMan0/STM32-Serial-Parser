@@ -71,6 +71,16 @@ public:
    */
   void draw_circle(const Pixel& pix, uint8_t radius, bool val = true);
 
+
+  /**
+   * @brief Draw a recatngle filled with \p val
+   *
+   * @param top_left
+   * @param bottom_right
+   * @param val
+   */
+  void draw_rectangle(const Pixel& top_left, const Pixel& bottom_right, bool val = true);
+
   /**
    * @brief Transfers the whole canvas using the draw_fcn_ callback
    *
@@ -88,6 +98,25 @@ public:
    * @return std::pair<uint8_t, uint8_t>, first is the page number, second is the mask
    */
   std::pair<uint8_t, uint8_t> get_page_and_mask(uint8_t row) const;
+
+
+  /**
+   * @brief Iterates through pixels from \p from to \p to
+   * @details IMPORTANT: \p from should be LESS than \p to
+   *
+   * @tparam LAMBDA type of lambda, this allows the lambda to have a capture list
+   * @param from
+   * @param to
+   * @param callback callback, can be a simple function pointer or a lambda
+   */
+  template <class LAMBDA>
+  void pixel_iterate(const Pixel& from, const Pixel& to, LAMBDA& callback) {
+    for (Pixel curr{ from }; curr.x_ < to.x_; ++curr.x_) {
+      for (curr.y_ = from.y_; curr.y_ < to.y_; ++curr.y_) {
+        callback(curr);
+      }
+    }
+  }
 };
 
 

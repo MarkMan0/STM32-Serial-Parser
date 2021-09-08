@@ -64,11 +64,19 @@ void GFX::draw_circle(const Pixel& pix, uint8_t radius, bool val) {
 
   // check each pixel in the bo, if it is inside the circle
   // not the most efficient way
-  for (Pixel curr{ start }; curr.x_ < end.x_; ++curr.x_) {
-    for (curr.y_ = start.y_; curr.y_ < end.y_; ++curr.y_) {
-      if (pix.distance(curr) <= radius) {
-        set_pixel(curr, val);
-      }
+
+  auto callback = [&pix, radius, val, this](const Pixel& curr) {
+    if (pix.distance(curr) <= radius) {
+      this->set_pixel(curr, val);
     }
-  }
+  };
+
+  pixel_iterate(start, end, callback);
+}
+
+
+void GFX::draw_rectangle(const Pixel& top_left, const Pixel& bottom_right, bool val) {
+  auto callback = [this, val](const Pixel& curr) { this->set_pixel(curr, val); };
+
+  pixel_iterate(top_left, bottom_right, callback);
 }

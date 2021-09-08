@@ -40,7 +40,8 @@ void display_task(void* arg) {
   graphics.draw();
   uint8_t col{ 0 };
   while (1) {
-    graphics.draw_circle({ col, 30 }, 8);
+    graphics.draw_circle({ col, 10 }, 4);
+    graphics.draw_rectangle({ col + 10, 30 }, { col + 15, 50 });
     col += 10;
     if (col >= 128) {
       graphics.clear_canvas();
