@@ -14,6 +14,8 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+#include <cmath>
+
 
 
 /**
@@ -140,6 +142,11 @@ namespace utils {
     }
     Point(const Point& other) = default;
     Point& operator=(const Point& lhs) = default;
+
+    template <class U>
+    float distance(const Point<U>& other) const {
+      return hypot(x_ - other.x_, y_ - other.y_);
+    }
   };
 
 

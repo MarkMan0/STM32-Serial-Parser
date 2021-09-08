@@ -44,3 +44,16 @@ void test_is_within() {
   TEST_ASSERT_FALSE(is_within_strict(high + 1, low, high));
   TEST_ASSERT_TRUE(is_within_strict((high + low) * 0.5f, low, high));
 }
+
+
+void test_point() {
+  using utils::Point;
+
+  Point<uint8_t> p1{ 2, 2 };
+  Point<int16_t> p2{ 3, 3 };
+  Point<double> p3{ 2.0, 3 };
+
+  TEST_ASSERT_EQUAL_FLOAT(p1.distance(p2), p2.distance(p1));
+  TEST_ASSERT_EQUAL_FLOAT(p1.distance(p3), p3.distance(p1));
+  TEST_ASSERT_EQUAL_FLOAT(1.0, p1.distance(p3));
+}

@@ -6,6 +6,7 @@ extern "C" {
 #endif
 void test_min_max();
 void test_is_within();
+void test_point();
 #ifdef __cplusplus
 }
 #endif
