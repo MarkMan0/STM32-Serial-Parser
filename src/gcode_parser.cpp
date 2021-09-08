@@ -33,6 +33,7 @@ void GcodeParser::gcode_task(void* arg) {
 
 void GcodeParser::begin() {
   gcode_task_handle_ = osThreadNew(GcodeParser::gcode_task, NULL, &kGcodeTaskAttr_);
+  check_rtos_create(gcode_task_handle_, "GCODE TASK");
 }
 
 void GcodeParser::parse_and_call(const char* arr) {

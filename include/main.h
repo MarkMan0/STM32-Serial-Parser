@@ -17,6 +17,13 @@ extern "C" {
  */
 void Error_Handler(void);
 
+/**
+ * @brief Checks if RTOS object was created
+ *
+ * @param t pointer to RTOS object
+ */
+void check_rtos_create(void* t, const char* fmt = "CR FAIL: %d");
+
 #ifdef __cplusplus
 }
 #endif

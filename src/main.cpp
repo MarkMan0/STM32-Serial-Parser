@@ -65,6 +65,7 @@ const osThreadAttr_t monitor_task_attr =
  * @param arg nothing
  */
 void monitor_task(void* arg) {
+  osDelay(5000);  // wait for all tasks to start
   const auto num_of_tasks = uxTaskGetNumberOfTasks();
 
   auto statuses = static_cast<TaskStatus_t*>(pvPortMalloc(num_of_tasks * sizeof(TaskStatus_t)));
@@ -88,6 +89,19 @@ void monitor_task(void* arg) {
     osDelay(pdMS_TO_TICKS(10000));
   }
 }
+
+void check_rtos_create(void* t, const char* fmt) {
+  static int call_cnt{ 0 };
+  if (t == NULL) {
+    constexpr size_t buff_sz{ 50 };
+    static char buff[buff_sz];
+    snprintf(buff, buff_sz - 1, fmt, call_cnt);
+    uart2.transmit(buff);
+    HAL_Delay(1000);
+    Error_Handler();
+  }
+  ++call_cnt;
+};
 
 /**
  * @brief Configures the system clock, called from main()
@@ -113,8 +127,9 @@ int main() {
   gcode.begin();
 
   display_task_handle = osThreadNew(display_task, NULL, &display_task_attr);
-
+  check_rtos_create(display_task_handle, "DISP TASK");
   monitor_task_handle = osThreadNew(monitor_task, NULL, &monitor_task_attr);
+  check_rtos_create(monitor_task_handle, "MONITOR TASK");
   osKernelStart();
 }
 

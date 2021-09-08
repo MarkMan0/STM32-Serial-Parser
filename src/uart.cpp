@@ -162,9 +162,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
 void Uart::begin() {
   /** create sempahores and start tasks*/
   rx_semaphore_ = xSemaphoreCreateCounting(kRxBufferSize, 0);
+  check_rtos_create(rx_semaphore_, "RX SEM");
   tx_semaphore_ = xSemaphoreCreateCounting(kTxBufferSize, 0);
+  check_rtos_create(tx_semaphore_, "TX SEM");
 
   uart_send_task_handle_ = osThreadNew(Uart::uart_transmit_task, NULL, &kUartSendTaskAttr);
+  check_rtos_create(uart_send_task_handle_, "TRANSMIT TASK");
 
   /** Start transmit DMA IRQ*/
   HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 6, 0);
