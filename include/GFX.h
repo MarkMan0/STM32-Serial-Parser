@@ -22,9 +22,9 @@
  */
 class GFX {
 public:
-  using Pixel = utils::Point<uint8_t>;  /*!< Used to get/set pixel by position */
+  using Pixel = utils::Point<uint8_t>;                      /*!< Used to get/set pixel by position */
   using canvas_t = std::array<std::array<uint8_t, 8>, 128>; /*!< canvas, where each bit is one pixel */
-  using draw_fcn_t = bool (*)(canvas_t&); /*!< callback funtion type to draw the canvas*/
+  using draw_fcn_t = bool (*)(canvas_t&);                   /*!< callback funtion type to draw the canvas*/
 
   /**
    * @brief Sets the pixel at the given coordinates to \p val
@@ -32,23 +32,14 @@ public:
    * @param pix Pixel
    * @param val defaults to true
    */
-  void set_pixel(const Pixel& pix, bool val = true) {
-    auto [page, mask] = get_page_and_mask(pix.y_);
-    if (val) {
-      canvas_[pix.x_][page] |= mask;
-    } else {
-      canvas_[pix.x_][page] &= ~mask;
-    }
-  }
+  void set_pixel(const Pixel& pix, bool val = true);
 
   /**
    * @brief Resets/turn off the pixel at \p pix
    *
    * @param pix pixel position
    */
-  void reset_pixel(const Pixel& pix) {
-    set_pixel(pix, false);
-  }
+  void reset_pixel(const Pixel& pix);
 
   /**
    * @brief Get the value of the pixeal at \p pix
@@ -56,33 +47,39 @@ public:
    * @param pix
    * @return true if pixel is set
    */
-  bool get_pixel(const Pixel& pix) {
-    auto [page, mask] = get_page_and_mask(pix.y_);
-    return (canvas_[pix.x_][page] & mask);
-  }
+  bool get_pixel(const Pixel& pix);
 
   /**
    * @brief Toggles the pixel at \p pix
    *
    * @param pix
    */
-  void toggle_pixel(const Pixel& pix) {
-    set_pixel(pix, !get_pixel(pix));
-  }
+  void toggle_pixel(const Pixel& pix);
+
+  /**
+   * @brief Set the canvas to all 0
+   *
+   */
+  void clear_canvas();
+
+  /**
+   * @brief Draw a circle around \p pix with \p radius . Sets the values in canvas to \p val
+   *
+   * @param pix
+   * @param radius
+   * @param val
+   */
+  void draw_circle(const Pixel& pix, uint8_t radius, bool val = true);
 
   /**
    * @brief Transfers the whole canvas using the draw_fcn_ callback
    *
    */
-  void draw() {
-    if (draw_fcn_) {
-      draw_fcn_(canvas_);
-    }
-  }
+  void draw();
 
 public:
   draw_fcn_t draw_fcn_{ nullptr }; /*!< Callback to transfer the canvas to the display*/
-  canvas_t canvas_{ 0 };  /*!< drawing canvas */
+  canvas_t canvas_{ 0 };           /*!< drawing canvas */
 
   /**
    * @brief For a given row, returns the page number and bit mask
@@ -90,10 +87,7 @@ public:
    * @param row give in pixel coordinate
    * @return std::pair<uint8_t, uint8_t>, first is the page number, second is the mask
    */
-  std::pair<uint8_t, uint8_t> get_page_and_mask(uint8_t row) const {
-    std::pair<uint8_t, uint8_t> ret{ row / 8, (1 << ( 7 - row % 8) ) };
-    return ret;
-  }
+  std::pair<uint8_t, uint8_t> get_page_and_mask(uint8_t row) const;
 };
 
 

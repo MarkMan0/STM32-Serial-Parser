@@ -37,17 +37,17 @@ void display_task(void* arg) {
     }
   }
   graphics.draw_fcn_ = SSD1306::draw_canvas;
+  graphics.draw();
   uint8_t col{ 0 };
   while (1) {
-    for (int i = 0; i < 64; ++i) {
-      graphics.toggle_pixel({ col, i });
-    }
-    col += 1;
-    if (col == 128) {
+    graphics.draw_circle({ col, 30 }, 8);
+    col += 10;
+    if (col >= 128) {
+      graphics.clear_canvas();
       col = 0;
     }
     graphics.draw();
-    osDelay(pdMS_TO_TICKS(1000));
+    osDelay(pdMS_TO_TICKS(100));
   }
 }
 
