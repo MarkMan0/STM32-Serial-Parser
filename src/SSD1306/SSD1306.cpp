@@ -40,8 +40,8 @@ bool SSD1306::begin() {
   buff[1] = reg::SET_DISPLAY_START_LINE;
   write(2);
 
-  // segment remap 0
-  buff[1] = reg::SET_SEGMENT_REMAP;
+  // segment remap 1 - flip in X
+  buff[1] = reg::SET_SEGMENT_REMAP | 0x1;
   write(2);
 
   // normal COM scan
@@ -52,7 +52,7 @@ bool SSD1306::begin() {
   // bit 4: com pin config
   // bit 5: left/right remap
   buff[1] = reg::SET_COM_HW_CONFIG;
-  buff[2] = 0x2 | (0x0 << 4) | (0x1 << 5);
+  buff[2] = 0x2 | (0x1 << 4) | (0x0 << 5);
   write(3);
 
   // set display contrast/brightness
