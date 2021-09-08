@@ -25,7 +25,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c) {
 
 
 void I2C::init_peripheral() {
-  constexpr I2C_InitTypeDef init{ .Timing = 0x2000090E,
+  constexpr I2C_InitTypeDef init{ .Timing = 0x0000020B,
                                   .OwnAddress1 = 0,
                                   .AddressingMode = I2C_ADDRESSINGMODE_7BIT,
                                   .DualAddressMode = I2C_DUALADDRESS_DISABLE,
