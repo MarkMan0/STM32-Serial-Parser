@@ -105,6 +105,26 @@ namespace utils {
   }
 
   /**
+   * @brief Constrains val
+   *
+   * @tparam T
+   * @param val
+   * @param low
+   * @param high
+   * @return T
+   */
+  template <class T, class U>
+  constexpr inline T constrain(T val, U low, U high) {
+    if (val <= low) {
+      return low;
+    } else if (val >= high) {
+      return high;
+    } else {
+      return val;
+    }
+  }
+
+  /**
    * @brief Create a thread attr object with some default parameters
    *
    * @param name the name of the task

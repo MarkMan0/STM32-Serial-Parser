@@ -29,6 +29,7 @@ int main() {
   RUN_TEST(test_is_within);
   RUN_TEST(test_point);
   RUN_TEST(test_rtc_i2c);
+  RUN_TEST(test_constrain);
   UNITY_END();
 
   while (1) {

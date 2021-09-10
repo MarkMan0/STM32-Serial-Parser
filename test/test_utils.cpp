@@ -57,3 +57,12 @@ void test_point() {
   TEST_ASSERT_EQUAL_FLOAT(p1.distance(p3), p3.distance(p1));
   TEST_ASSERT_EQUAL_FLOAT(1.0, p1.distance(p3));
 }
+
+void test_constrain() {
+  using utils::constrain;
+
+  TEST_ASSERT_EQUAL(1, constrain(1, 0, 2));
+  TEST_ASSERT_EQUAL(2, constrain(5, 0, 2));
+  TEST_ASSERT_EQUAL(0, constrain(-1, 0, 2));
+  TEST_ASSERT_EQUAL_FLOAT(1.0, constrain(1.0, 0, 5));
+}
