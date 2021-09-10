@@ -38,17 +38,15 @@ void display_task(void* arg) {
   }
   graphics.draw_fcn_ = SSD1306::draw_canvas;
   graphics.draw();
-  uint8_t col{ 0 };
+  char c{ ' ' };
   while (1) {
-    graphics.draw_circle({ col, 10 }, 4);
-    graphics.draw_rectangle({ col + 10, 30 }, { col + 15, 50 });
-    col += 10;
-    if (col >= 128) {
-      graphics.clear_canvas();
-      col = 0;
+    graphics.clear_canvas();
+    graphics.render_glyph({ 50, 16 }, c++);
+    if (c >= 127) {
+      c = ' ';
     }
     graphics.draw();
-    osDelay(pdMS_TO_TICKS(100));
+    osDelay(pdMS_TO_TICKS(500));
   }
 }
 

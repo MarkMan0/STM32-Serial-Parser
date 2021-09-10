@@ -82,6 +82,14 @@ public:
   void draw_rectangle(const Pixel& top_left, const Pixel& bottom_right, bool val = true);
 
   /**
+   * @brief Draws the character to the canvas
+   *
+   * @param pos x is the x pos, y is the page/line(0-7)
+   * @param c the char to render (0-127)
+   */
+  void render_glyph(const Pixel& pos, char c);
+
+  /**
    * @brief Transfers the whole canvas using the draw_fcn_ callback
    *
    */
