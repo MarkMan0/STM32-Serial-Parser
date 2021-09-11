@@ -38,13 +38,8 @@ void display_task(void* arg) {
   }
   graphics.draw_fcn_ = SSD1306::draw_canvas;
   graphics.draw();
-  char c{ ' ' };
   while (1) {
-    graphics.clear_canvas();
-    graphics.render_glyph({ 50, 16 }, c++);
-    if (c >= 127) {
-      c = ' ';
-    }
+    graphics.draw_text({ 0, 0 }, "Hello world!\n\tHello world!");
     graphics.draw();
     osDelay(pdMS_TO_TICKS(500));
   }

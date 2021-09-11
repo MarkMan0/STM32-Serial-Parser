@@ -90,6 +90,14 @@ public:
   void render_glyph(const Pixel& pos, char c);
 
   /**
+   * @brief draws text to position
+   *
+   * @param pos y is the line(0-7) and NOT pixel
+   * @param txt text to render
+   */
+  void draw_text(const Pixel& pos, const char* txt);
+
+  /**
    * @brief Transfers the whole canvas using the draw_fcn_ callback
    *
    */

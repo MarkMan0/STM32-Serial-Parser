@@ -122,3 +122,60 @@ void GFX::render_glyph(const Pixel& pos, char c) {
     canvas_[7 - col + x_offset][page] = column_val;
   }
 }
+
+
+void GFX::draw_text(const Pixel& pos, const char* txt) {
+  const auto len = strlen(txt);
+
+  auto curr_page = pos.y_;
+  auto curr_x = pos.x_;
+  const auto& curr_font = my_fonts::font1;
+  const auto increment = curr_font.width;
+
+  bool state{ true };
+
+  auto render_one = [&curr_x, &curr_page, &state, this](const char c) {
+    if (!state) {
+      return;
+    }
+    render_glyph({ curr_x, curr_page }, c);
+    curr_x += increment;
+    if (curr_x >= 127 - increment) {
+      // next char won't fit
+      curr_x = 0;
+      curr_page++;
+      if (curr_page > 7) {
+        // screen is full
+        curr_page = 0;
+        state = false;
+        return;
+      }
+    }
+    return;
+  };
+
+  for (unsigned int i = 0; i < len; ++i) {
+    if (!state) {
+      return;
+    }
+    switch (txt[i]) {
+      case '\r':
+        curr_x = 0;
+        break;
+      case '\n':
+        curr_x = 0;
+        curr_page++;
+        if (curr_page > 7) {
+          return;
+        }
+        break;
+      case '\t':
+        // render tab as 2 spaces
+        render_one(' ');
+        render_one(' ');
+        break;
+      default:
+        render_one(txt[i]);
+    }
+  }
+}
