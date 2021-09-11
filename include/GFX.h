@@ -90,12 +90,26 @@ public:
   void render_glyph(const Pixel& pos, char c);
 
   /**
-   * @brief draws text to position
+   * @brief Draws text to the current cursor_ pos
    *
-   * @param pos y is the line(0-7) and NOT pixel
-   * @param txt text to render
+   * @param txt
    */
-  void draw_text(const Pixel& pos, const char* txt);
+  void draw_text(const char* txt);
+
+  /**
+   * @brief Moves the cursor to the given location
+   *
+   * @param to
+   */
+  void move_cursor(const Pixel& to);
+
+  /**
+   * @brief Draws printf-style format text, very limited capabilities
+   * @see vprintf
+   * @param fmt Only use %d and %s
+   * @param ...
+   */
+  void printf(const char* fmt, ...);
 
   /**
    * @brief Transfers the whole canvas using the draw_fcn_ callback
@@ -106,6 +120,7 @@ public:
 public:
   draw_fcn_t draw_fcn_{ nullptr }; /*!< Callback to transfer the canvas to the display*/
   canvas_t canvas_{ 0 };           /*!< drawing canvas */
+  Pixel cursor_;                   /*!< cursor for text drawing*/
 
   /**
    * @brief For a given row, returns the page number and bit mask
@@ -133,6 +148,24 @@ public:
       }
     }
   }
+
+  /**
+   * @brief draw the formatted string to the canvas, limited capabilities
+   * @details Currently only supports %d and %s, without width specifiers
+   * @param fmt
+   * @param args
+   */
+  void vprintf(const char* fmt, va_list args);
+
+  /**
+   * @brief Render one character and advances the cursor
+   * @details success is not returned, but modified in a parameter, so code which
+   * uses this method will be shorter, no need to wrap it in if, just call with the same \p state parameter
+   * @param c char to render
+   * @param increment width of the char
+   * @param state only render if true, method will set this to false if end of screen is reached
+   */
+  void render_one(char c, uint8_t increment, bool& state);
 };
 
 

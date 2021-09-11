@@ -124,58 +124,140 @@ void GFX::render_glyph(const Pixel& pos, char c) {
 }
 
 
-void GFX::draw_text(const Pixel& pos, const char* txt) {
+void GFX::draw_text(const char* txt) {
   const auto len = strlen(txt);
-
-  auto curr_page = pos.y_;
-  auto curr_x = pos.x_;
-  const auto& curr_font = my_fonts::font1;
-  const auto increment = curr_font.width;
+  const auto increment = my_fonts::font1.width;
 
   bool state{ true };
-
-  auto render_one = [&curr_x, &curr_page, &state, this](const char c) {
-    if (!state) {
-      return;
-    }
-    render_glyph({ curr_x, curr_page }, c);
-    curr_x += increment;
-    if (curr_x >= 127 - increment) {
-      // next char won't fit
-      curr_x = 0;
-      curr_page++;
-      if (curr_page > 7) {
-        // screen is full
-        curr_page = 0;
-        state = false;
-        return;
-      }
-    }
-    return;
-  };
 
   for (unsigned int i = 0; i < len; ++i) {
     if (!state) {
       return;
     }
-    switch (txt[i]) {
-      case '\r':
-        curr_x = 0;
-        break;
-      case '\n':
-        curr_x = 0;
-        curr_page++;
-        if (curr_page > 7) {
-          return;
+    render_one(txt[i], increment, state);
+  }
+}
+
+
+void GFX::render_one(char c, uint8_t increment, bool& state) {
+  if (!state) {
+    return;
+  }
+
+  switch (c) {
+    case '\r':
+      cursor_.x_ = 0;
+      return;
+    case '\n':
+      cursor_.x_ = 0;
+      cursor_.y_++;
+      if (cursor_.y_ > 7) {
+        cursor_.y_ = 0;
+        return;
+      }
+      return;
+    case '\t':
+      // render tab as 2 spaces
+      render_one(' ', increment, state);
+      render_one(' ', increment, state);
+      return;
+  }
+
+  render_glyph(cursor_, c);
+  cursor_.x_ += increment;
+  if (cursor_.x_ >= 127 - increment) {
+    // next char won't fit
+    cursor_.x_ = 0;
+    cursor_.y_++;
+    if (cursor_.y_ > 7) {
+      // screen is full
+      cursor_.y_ = 0;
+      state = false;
+      return;
+    }
+  }
+}
+
+void GFX::move_cursor(const Pixel& to) {
+  cursor_ = to;
+}
+
+void GFX::printf(const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  vprintf(fmt, args);
+  va_end(args);
+}
+
+
+void GFX::vprintf(const char* fmt, va_list args) {
+  enum Format_state { NO_FORMAT, SEEN_PERCENT, FORMAT_D, FORMAT_S, BAD_FORMAT };
+  Format_state fmt_state{ NO_FORMAT };
+  bool render_state{ true };
+
+  auto rndr = [&render_state, this](char c) { render_one(c, 8, render_state); };
+
+  auto render_int = [&rndr, this](int num) {
+    if (num < 0) {
+      rndr('-');
+      num = abs(num);
+    }
+    int place = 10000;
+    bool skipping_zeros{ true };
+    while (place) {
+      int num_at_place = (num - (num % place)) / place;
+      if (num_at_place) {
+        skipping_zeros = false;
+      }
+      num = num % place;
+      place /= 10;
+      if (!skipping_zeros || place == 0) {
+        // draw at least one zero
+        rndr('0' + num_at_place);
+      }
+    }
+  };
+
+  while (*fmt) {
+    switch (fmt_state) {
+      case NO_FORMAT: {
+        if (*fmt == '%') {
+          fmt_state = SEEN_PERCENT;
+        } else {
+          rndr(*fmt);
         }
+        ++fmt;
         break;
-      case '\t':
-        // render tab as 2 spaces
-        render_one(' ');
-        render_one(' ');
+      }
+      case SEEN_PERCENT: {
+        if (*fmt == 'd' || *fmt == 'i') {
+          fmt_state = FORMAT_D;
+        } else if (*fmt == 's') {
+          fmt_state = FORMAT_S;
+        } else if (*fmt == '%') {
+          fmt_state = NO_FORMAT;
+          rndr('%');
+        } else {
+          fmt_state = BAD_FORMAT;
+        }
+        ++fmt;
         break;
-      default:
-        render_one(txt[i]);
+      }
+      case FORMAT_D: {
+        int val = va_arg(args, int);
+        render_int(val);
+        fmt_state = NO_FORMAT;
+        break;
+      }
+      case FORMAT_S: {
+        const char* str = va_arg(args, const char*);
+        draw_text(str);
+        fmt_state = NO_FORMAT;
+        break;
+      }
+      case BAD_FORMAT: {
+        return;
+      }
     }
   }
 }

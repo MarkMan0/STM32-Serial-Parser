@@ -38,8 +38,11 @@ void display_task(void* arg) {
   }
   graphics.draw_fcn_ = SSD1306::draw_canvas;
   graphics.draw();
+  int i{ 0 };
   while (1) {
-    graphics.draw_text({ 0, 0 }, "Hello world!\n\tHello world!");
+    graphics.clear_canvas();
+    graphics.printf("L%s %d!\n", "ine", i++);
+    graphics.draw_text("\tHlo wrld!\r1\n");
     graphics.draw();
     osDelay(pdMS_TO_TICKS(500));
   }
