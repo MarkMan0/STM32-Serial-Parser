@@ -89,8 +89,15 @@ void GFX::render_glyph(const Pixel& pos, char c) {
   const auto page = 7 - utils::constrain(pos.y_, 0, 7);
   const auto& curr_font = my_fonts::font1;
 
-
+  if (c < curr_font.offset_) {
+    // cant render
+    return;
+  }
   const auto index = c - curr_font.offset_;
+  if (index >= curr_font.num_glyphs_) {
+    // cant render
+    return;
+  }
 
   /*
    * we can only set columns in the canvas, not rows
