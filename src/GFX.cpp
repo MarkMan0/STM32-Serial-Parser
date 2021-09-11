@@ -86,7 +86,7 @@ void GFX::draw_rectangle(const Pixel& top_left, const Pixel& bottom_right, bool 
 /// \todo rework this mess
 void GFX::render_glyph(const Pixel& pos, char c) {
   const auto x_offset = pos.x_;
-  const auto page = utils::constrain(pos.y_, 0, 7);
+  const auto page = 7 - utils::constrain(pos.y_, 0, 7);
   const auto& curr_font = my_fonts::font1;
 
 
