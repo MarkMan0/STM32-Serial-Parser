@@ -17,13 +17,19 @@ std::pair<uint8_t, uint8_t> GFX::get_page_and_mask(uint8_t row) const {
   return ret;
 }
 
+uint8_t& GFX::canvas_access(uint8_t i, uint8_t j) {
+  i = utils::constrain(i, 0, canvas_.size());
+  j = utils::constrain(j, 0, canvas_[0].size());
+  return canvas_[i][j];
+}
+
 
 void GFX::set_pixel(const Pixel& pix, bool val) {
   auto [page, mask] = get_page_and_mask(pix.y_);
   if (val) {
-    canvas_[pix.x_][page] |= mask;
+    canvas_access(pix.x_, page) |= mask;
   } else {
-    canvas_[pix.x_][page] &= ~mask;
+    canvas_access(pix.x_, page) &= ~mask;
   }
 }
 
@@ -35,7 +41,7 @@ void GFX::reset_pixel(const Pixel& pix) {
 
 bool GFX::get_pixel(const Pixel& pix) {
   auto [page, mask] = get_page_and_mask(pix.y_);
-  return (canvas_[pix.x_][page] & mask);
+  return (canvas_access(pix.x_, page) & mask);
 }
 
 void GFX::toggle_pixel(const Pixel& pix) {
@@ -119,7 +125,7 @@ void GFX::render_glyph(const Pixel& pos, char c) {
       column_val |= (!!(a & (uint8_t)(1 << col))) << (7 - glyph_row);
     }
     // finally write the column
-    canvas_[7 - col + x_offset][page] = column_val;
+    canvas_access(7 - col + x_offset, page) = column_val;
   }
 }
 

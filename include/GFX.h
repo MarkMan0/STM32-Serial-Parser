@@ -130,6 +130,15 @@ public:
    */
   std::pair<uint8_t, uint8_t> get_page_and_mask(uint8_t row) const;
 
+  /**
+   * @brief Bound checks and returns reference to byte in canvas_
+   *
+   * @param i index 1
+   * @param j index 2
+   * @return uint8_t&
+   */
+  uint8_t& canvas_access(uint8_t i, uint8_t j);
+
 
   /**
    * @brief Iterates through pixels from \p from to \p to
