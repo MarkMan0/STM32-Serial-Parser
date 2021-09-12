@@ -108,13 +108,15 @@ namespace utils {
    * @brief Constrains val
    *
    * @tparam T
+   * @tparam U
+   * @tparam V
    * @param val
    * @param low
    * @param high
    * @return T
    */
-  template <class T, class U>
-  constexpr inline T constrain(T val, U low, U high) {
+  template <class T, class U, class V>
+  constexpr inline T constrain(T val, U low, V high) {
     if (val <= low) {
       return low;
     } else if (val >= high) {
