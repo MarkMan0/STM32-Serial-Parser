@@ -45,18 +45,20 @@ bool SSD1306::begin() {
                                         reg::SET_DISPLAY_ON
   };
 
-  return i2c.write_register(addr_, 0, const_cast<uint8_t*>(config), sizeof(config));
+  return i2c.get_lock().lock() && i2c.write_register(addr_, 0, const_cast<uint8_t*>(config), sizeof(config));
 }
 
 bool SSD1306::draw_canvas(GFX::canvas_t& canvas) {
   if (!reset_ram_address()) return false;
   // data is stored in a 2D std::array, which is contiguous, so we can transfer in one go
-  return i2c.write_register(addr_, 0x40, reinterpret_cast<uint8_t*>(canvas.data()), 128 * 8);
+  return i2c.get_lock().lock() && i2c.write_register(addr_, 0x40, reinterpret_cast<uint8_t*>(canvas.data()), 128 * 8);
 }
 
 void SSD1306::set_ram_val(uint8_t val) {
   if (!reset_ram_address()) return;
   uint8_t buff[2] = { 0x40, (val >= 0) ? 0xFF : 0 };
+  auto lck = i2c.get_lock();
+  lck.lock();
   for (int curr_col = 0; curr_col < 128; ++curr_col) {
     for (int curr_page = 0; curr_page < 8; ++curr_page) {
       if (!i2c.write(addr_, buff, 2)) {
@@ -69,5 +71,5 @@ void SSD1306::set_ram_val(uint8_t val) {
 
 bool SSD1306::reset_ram_address() {
   static constexpr uint8_t buff[]{ SSD_1306_reg::SET_PAGE_ADDRESS, 0, 0x7, SSD_1306_reg::SET_COLUMN_ADDRESS, 0, 127 };
-  return i2c.write_register(addr_, 0x00, const_cast<uint8_t*>(buff), sizeof(buff));
+  return i2c.get_lock().lock() && i2c.write_register(addr_, 0x00, const_cast<uint8_t*>(buff), sizeof(buff));
 }

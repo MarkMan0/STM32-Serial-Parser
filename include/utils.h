@@ -13,6 +13,7 @@
 #include "cmsis_os.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "semphr.h"
 
 #include <cmath>
 
@@ -169,6 +170,56 @@ namespace utils {
     float distance(const Point<U>& other) const {
       return hypot(x_ - other.x_, y_ - other.y_);
     }
+  };
+
+  /**
+   * @brief Move only RAI lock class
+   *
+   */
+  class SimpleLock {
+  public:
+    SimpleLock(SemaphoreHandle_t sem) : locked_{ false }, sem_(sem) {
+    }
+    // copy
+    SimpleLock(const SimpleLock&) = delete;
+    SimpleLock& operator=(const SimpleLock&) = delete;
+    // move
+    SimpleLock(SimpleLock&& other) : locked_{ other.locked_ }, sem_(other.sem_) {
+      other.locked_ = false;  // so it won't unlock when destructed
+      other.sem_ = nullptr;
+    }
+    SimpleLock& operator=(SimpleLock&& other) {
+      this->sem_ = other.sem_;
+      this->locked_ = other.locked_;
+      other.locked_ = false;
+      other.sem_ = nullptr;
+      return *this;
+    }
+    /**
+     * @brief Attempts to lock with timeout
+     * @return true on successful lock
+     */
+    bool lock() {
+      locked_ = xSemaphoreTake(sem_, 100) == pdTRUE;
+      return locked_;
+    }
+    /**
+     * @brief Unlocks the mutex
+     *
+     */
+    void release() {
+      if (sem_ != nullptr && locked_) {
+        xSemaphoreGive(sem_);
+        locked_ = false;
+      }
+    }
+    ~SimpleLock() {
+      release();
+    }
+
+  private:
+    bool locked_{ false };
+    SemaphoreHandle_t sem_;
   };
 
 

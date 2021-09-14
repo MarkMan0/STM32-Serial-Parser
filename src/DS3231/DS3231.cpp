@@ -96,8 +96,14 @@ static constexpr DS3231::time valid_time{ .seconds = 0,
 
 void DS3231::report_all_registers() {
   uint8_t buff[REGISTER_END];
-  if (!i2c.read_register(dev_address_, SECONDS, buff, REGISTER_END)) {
-    return;
+  {
+    auto lck = i2c.get_lock();
+    if (!lck.lock()) {
+      return;
+    }
+    if (!i2c.read_register(dev_address_, SECONDS, buff, REGISTER_END)) {
+      return;
+    }
   }
   for (uint8_t i = 0; i < REGISTER_END; ++i) {
     uart2.printf("buff %d, val: %d", i, buff[i]);
@@ -109,9 +115,14 @@ bool DS3231::get_time(time& t) {
   uint8_t buff[7];
 
   buff[0] = SECONDS;
-
-  if (!i2c.read_register(dev_address_, SECONDS, buff, 7)) {
-    return false;
+  {
+    auto lck = i2c.get_lock();
+    if (!lck.lock()) {
+      return false;
+    }
+    if (!i2c.read_register(dev_address_, SECONDS, buff, 7)) {
+      return false;
+    }
   }
 
   t = valid_time;
@@ -186,11 +197,10 @@ bool DS3231::set_time(time& t) {
   buff[6] = ((t.year - 2000) / 10) << 4;
   buff[6] |= (t.year % 10) & MASK_YEAR;
 
-  return i2c.write_register(dev_address_, SECONDS, buff, 7);
+  return i2c.get_lock().lock() && i2c.write_register(dev_address_, SECONDS, buff, 7);
 }
 
 void DS3231::report_time(const time& t) {
-
   uart2.printf("%2d.%2d.%4d %2d:%2d:%2d", t.date, t.month, t.year, t.hours, t.minutes, t.seconds);
 
   static constexpr const char* strs[] = {

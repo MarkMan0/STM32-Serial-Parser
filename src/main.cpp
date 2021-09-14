@@ -36,6 +36,8 @@ int main() {
   i2c.init_peripheral();
   osKernelInitialize();
 
+  i2c.init_os();
+
   uart2.begin();
   gcode.begin();
 

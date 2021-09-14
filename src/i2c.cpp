@@ -9,6 +9,7 @@
 #include "main.h"
 #include "utils.h"
 #include "pin_api.h"
+#include "os_tasks.h"
 
 /**
  * @brief Called by HAL in HAL_I2C_Init()
@@ -41,6 +42,11 @@ void I2C::init_peripheral() {
   utils::hal_wrap(HAL_I2CEx_ConfigAnalogFilter(&hi2c1_, I2C_ANALOGFILTER_ENABLE));
   utils::hal_wrap(HAL_I2CEx_ConfigDigitalFilter(&hi2c1_, 0x00));
 };
+
+void I2C::init_os() {
+  mutex_ = xSemaphoreCreateMutex();
+  tasks::check_rtos_create(mutex_, "I2CMutex");
+}
 
 static constexpr uint32_t timeout = 1000;
 
