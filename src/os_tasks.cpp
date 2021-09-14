@@ -3,6 +3,7 @@
 #include "utils.h"
 #include "uart.h"
 #include "SSD1306/SSD1306.h"
+#include "DS3231/DS3231.h"
 
 
 void tasks::check_rtos_create(void* t, const char* fmt) {
@@ -80,13 +81,18 @@ void tasks::display_task(void* arg) {
   }
   graphics.draw_fcn_ = SSD1306::draw_canvas;
   graphics.draw();
-  int i{ 0 };
+  DS3231::time t;
   while (1) {
-    graphics.clear_canvas();
-    graphics.printf("L%s %d!\n", "ine", i++);
-    graphics.draw_text("\tHlo wrld!\r1\n");
-    graphics.draw();
-    osDelay(pdMS_TO_TICKS(500));
+    if (rtc.get_time(t)) {
+      graphics.clear_canvas();
+      graphics.move_cursor({ 12, 0 });
+      graphics.printf("%d:%d:%d", (int)t.hours, (int)t.minutes, (int)t.seconds);
+      if (t.seconds % 2) {
+        graphics.draw_circle({ 5, 11 }, 4);
+      }
+      graphics.draw();
+    }
+    osDelay(pdMS_TO_TICKS(1000));
   }
 }
 
