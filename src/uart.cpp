@@ -8,6 +8,7 @@
 #include "cmsis_os.h"
 #include "semphr.h"
 #include "utils.h"
+#include "os_tasks.h"
 
 // Static members
 const Uart::msg_t Uart::kEmptyMsg{ 0 };
@@ -162,12 +163,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
 void Uart::begin() {
   /** create sempahores and start tasks*/
   rx_semaphore_ = xSemaphoreCreateCounting(kRxBufferSize, 0);
-  check_rtos_create(rx_semaphore_, "RX SEM");
+  tasks::check_rtos_create(rx_semaphore_, "RX SEM");
   tx_semaphore_ = xSemaphoreCreateCounting(kTxBufferSize, 0);
-  check_rtos_create(tx_semaphore_, "TX SEM");
+  tasks::check_rtos_create(tx_semaphore_, "TX SEM");
 
   uart_send_task_handle_ = osThreadNew(Uart::uart_transmit_task, NULL, &kUartSendTaskAttr);
-  check_rtos_create(uart_send_task_handle_, "TRANSMIT TASK");
+  tasks::check_rtos_create(uart_send_task_handle_, "TRANSMIT TASK");
 
   /** Start transmit DMA IRQ*/
   HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 6, 0);
