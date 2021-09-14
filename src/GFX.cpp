@@ -224,7 +224,7 @@ void GFX::vprintf(const char* fmt, va_list args) {
     }
   };
 
-  while (*fmt) {
+  while (*fmt || fmt_state == FORMAT_D || fmt_state == FORMAT_S) {
     switch (fmt_state) {
       case NO_FORMAT: {
         if (*fmt == '%') {
